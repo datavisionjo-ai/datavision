@@ -86,15 +86,7 @@ async function sendFreeMessage() {
     addMessageToChat(response, 'ai');
 }
 
-// اربط الأزرار
-document.addEventListener('DOMContentLoaded', function() {
-    const sendBtn = document.querySelector('#assistant .btn-primary');
-    const inputField = document.getElementById('assistantInput');
-    
-    if (sendBtn) sendBtn.onclick = sendFreeMessage;
-    if (inputField) {
-        inputField.onkeypress = (e) => {
-            if (e.key === 'Enter') sendFreeMessage();
-        };
-    }
-});
+// وظيفة إرسال رسالة (للتوافق مع الكود القديم)
+async function sendMessage() {
+    await sendFreeMessage();
+}
