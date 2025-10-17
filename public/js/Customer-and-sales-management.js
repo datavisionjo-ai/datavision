@@ -220,28 +220,6 @@ function renderSales() {
         container.appendChild(item);
     });
 }
-const apiKey = 'Authorization: Bearer <token>'; // قم بوضع مفتاح API هنا
-
-// إرسال الطلب إلى OpenAI API
-
-
-// وظيفة إرسال رسالة
-async function sendMessage() {
-    const userMessage = document.getElementById("assistantInput").value;
-    if (!userMessage.trim()) return;
-
-    // عرض رسالة المستخدم
-    addMessageToChat(userMessage, 'user');
-    
-    // إرسال الرسالة إلى OpenAI API
-    const aiResponse = await sendAIMessage(userMessage);
-    
-    // عرض رد المساعد الذكي
-    addMessageToChat(aiResponse, 'ai');
-    
-    // مسح حقل النص بعد إرسال الرسالة
-    document.getElementById("assistantInput").value = '';
-}
 
 // إضافة الرسائل إلى نافذة الدردشة
 function addMessageToChat(message, sender) {
@@ -265,6 +243,6 @@ function addMessageToChat(message, sender) {
 // التعامل مع الضغط على مفتاح Enter
 function handleKeyPress(event) {
     if (event.key === 'Enter') {
-        sendMessage();
+        sendFreeMessage();
     }
 }
