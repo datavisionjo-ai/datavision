@@ -1,4 +1,4 @@
-// api-client.js - العميل للاتصال مع السيرفر
+// api-client.js - العميل للاتصال مع السيرفر - معدل كامل
 const API_BASE = window.location.origin + '/api';
 
 // تخزين التوكن
@@ -84,60 +84,105 @@ function logout() {
 
 // إدارة العملاء
 async function getCustomers() {
-    const result = await apiRequest('/customers');
-    return result.customers || [];
+    try {
+        const result = await apiRequest('/customers');
+        return result.customers || [];
+    } catch (error) {
+        console.error('Error fetching customers:', error);
+        return [];
+    }
 }
 
 async function addCustomer(customerData) {
-    const result = await apiRequest('/customers', {
-        method: 'POST',
-        body: JSON.stringify(customerData)
-    });
-    return result.customer;
+    try {
+        const result = await apiRequest('/customers', {
+            method: 'POST',
+            body: JSON.stringify(customerData)
+        });
+        return result.customer;
+    } catch (error) {
+        console.error('Error adding customer:', error);
+        throw error;
+    }
 }
 
 async function updateCustomer(id, customerData) {
-    const result = await apiRequest(`/customers/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(customerData)
-    });
-    return result.customer;
+    try {
+        const result = await apiRequest(`/customers/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(customerData)
+        });
+        return result.customer;
+    } catch (error) {
+        console.error('Error updating customer:', error);
+        throw error;
+    }
 }
 
-async function deleteCustomer(id) {
-    const result = await apiRequest(`/customers/${id}`, {
-        method: 'DELETE'
-    });
-    return result;
+async function deleteCustomerAPI(id) {
+    try {
+        const result = await apiRequest(`/customers/${id}`, {
+            method: 'DELETE'
+        });
+        return result;
+    } catch (error) {
+        console.error('Error deleting customer:', error);
+        throw error;
+    }
 }
 
 // إدارة المبيعات
 async function getSales() {
-    const result = await apiRequest('/sales');
-    return result.sales || [];
+    try {
+        const result = await apiRequest('/sales');
+        return result.sales || [];
+    } catch (error) {
+        console.error('Error fetching sales:', error);
+        return [];
+    }
 }
 
 async function addSale(saleData) {
-    const result = await apiRequest('/sales', {
-        method: 'POST',
-        body: JSON.stringify(saleData)
-    });
-    return result.sale;
+    try {
+        const result = await apiRequest('/sales', {
+            method: 'POST',
+            body: JSON.stringify(saleData)
+        });
+        return result.sale;
+    } catch (error) {
+        console.error('Error adding sale:', error);
+        throw error;
+    }
 }
 
 // الإحصائيات
 async function getStats() {
-    const result = await apiRequest('/user/stats');
-    return result.stats;
+    try {
+        const result = await apiRequest('/user/stats');
+        return result.stats;
+    } catch (error) {
+        console.error('Error fetching stats:', error);
+        return {
+            totalCustomers: 0,
+            totalSales: 0,
+            salesAmount: 0,
+            activeCustomers: 0
+        };
+    }
 }
 
 // المساعد الذكي
 async function analyzeWithAI(message) {
-    const result = await apiRequest('/ai/analyze', {
-        method: 'POST',
-        body: JSON.stringify({ message })
-    });
-    return result.response;
+    try {
+        const result = await apiRequest('/ai/analyze', {
+            method: 'POST',
+            body: JSON.stringify({ message })
+        });
+        return result.response;
+    } catch (error) {
+        console.error('Error analyzing with AI:', error);
+        return '⚠️ تعذر الاتصال بالمساعد الذكي حالياً. جرب مرة أخرى لاحقاً.';
+    }
 }
 
 // التحقق من حالة المستخدم
@@ -148,3 +193,18 @@ function isLoggedIn() {
 function getCurrentUser() {
     return currentUser;
 }
+
+// جعل الدوال متاحة globally
+window.login = login;
+window.register = register;
+window.logout = logout;
+window.getCustomers = getCustomers;
+window.addCustomer = addCustomer;
+window.updateCustomer = updateCustomer;
+window.deleteCustomerAPI = deleteCustomerAPI;
+window.getSales = getSales;
+window.addSale = addSale;
+window.getStats = getStats;
+window.analyzeWithAI = analyzeWithAI;
+window.isLoggedIn = isLoggedIn;
+window.getCurrentUser = getCurrentUser;
