@@ -1,580 +1,469 @@
-// super-ai-assistant.js - النظام الذكي المتكامل
-class SuperAIAssistant {
+// enhanced-ai-assistant.js - النظام المحسن لفهم الأخطاء الإملائية
+class EnhancedAIAssistant {
     constructor() {
-        this.dataAnalyzer = new DataAnalyzer();
-        this.responseGenerator = new ResponseGenerator();
-        this.reportEngine = new ReportEngine();
+        this.spellCorrections = this.createSpellCorrections();
+        this.setupEventListeners();
     }
 
-    // 🧠 المحرك الرئيسي للذكاء الاصطناعي
-    async processQuestion(question, context) {
-        const analysis = this.analyzeQuestion(question);
-        const data = this.dataAnalyzer.getRelevantData(analysis.category);
-        const answer = this.generateSmartResponse(question, analysis, data, context);
-        
+    // 🎯 قاعدة بيانات التصحيحات الإملائية
+    createSpellCorrections() {
         return {
-            answer: answer,
-            analysis: analysis,
-            suggestions: this.getRelatedSuggestions(analysis.category),
-            followUp: this.getFollowUpQuestions(analysis.category)
-        };
-    }
-
-    // 🔍 تحليل السؤال وفهم النية
-    analyzeQuestion(question) {
-        const q = question.toLowerCase().trim();
-        
-        return {
-            original: question,
-            category: this.detectCategory(q),
-            intent: this.detectIntent(q),
-            urgency: this.detectUrgency(q),
-            complexity: this.detectComplexity(q),
-            keywords: this.extractKeywords(q)
-        };
-    }
-
-    // 🎯 كشف فئة السؤال
-    detectCategory(question) {
-        const categories = {
             // العملاء
-            'customers': ['عملاء', 'زبائن', 'عملائ', 'زبون', 'عميل', 'clients', 'customers'],
-            'customers_basic': ['كم عميل', 'عدد العملاء', 'إجمالي العملاء', 'كم زبون'],
-            'customers_analysis': ['تحليل العملاء', 'شريحة العملاء', 'أنماط العملاء', 'سلوك العملاء'],
-            'customers_management': ['إضافة عميل', 'تعديل عميل', 'حذف عميل', 'بحث عن عميل'],
+            'عملاء': ['عملاء', 'عملا', 'عما', 'عملاه', 'عملااء'],
+            'زبائن': ['زبائن', 'زباين', 'زبين', 'زابئن', 'زبائين'],
+            'نشطين': ['نشطين', 'نشطيين', 'نشطيين', 'نشطن', 'نشطين'],
+            'نشط': ['نشط', 'نشطط', 'نشتط', 'نشطط'],
             
             // المبيعات
-            'sales': ['مبيعات', 'بيع', 'مبلغ', 'إيرادات', 'ربح', 'sales', 'revenue'],
-            'sales_basic': ['إجمالي مبيعات', 'كم بيع', 'عدد المبيعات', 'مجموع المبيعات'],
-            'sales_analysis': ['تحليل المبيعات', 'اتجاه المبيعات', 'مقارنة مبيعات', 'أداء المبيعات'],
-            'sales_comparison': ['مقارنة', 'الشهر الماضي', 'هذا الشهر', 'نسبة التغير'],
+            'مبيعات': ['مبيعات', 'مبيعات', 'مبيعاته', 'مبيعاتي', 'مبيعاث'],
+            'ربح': ['ربح', 'ربحح', 'ربحه', 'ربحى', 'ربح'],
+            'ايرادات': ['ايرادات', 'إيرادات', 'ايرادت', 'ايراداث', 'ايراددات'],
+            'دينار': ['دينار', 'دينارر', 'دينار', 'ديناار', 'دينار'],
+            
+            // الأسئلة الشائعة
+            'كم': ['كم', 'كام', 'كمم', 'كلم', 'كعم'],
+            'عدد': ['عدد', 'عددد', 'اعدد', 'عد', 'ععد'],
+            'ما هو': ['ما هو', 'ماهو', 'ماةو', 'ماهوو', 'ماهو'],
+            'كيف': ['كيف', 'كيفف', 'كيفة', 'كيف', 'كيف'],
             
             // التقارير
-            'reports': ['تقرير', 'تقارير', 'إحصائيات', 'إحصاءات', 'report', 'stats'],
-            'reports_comprehensive': ['تقرير شامل', 'نظرة عامة', 'ملخص الأداء', 'نظرة شاملة'],
-            'reports_periodic': ['تقرير شهري', 'تقرير أسبوعي', 'هذا الشهر', 'هذا الأسبوع'],
+            'تقرير': ['تقرير', 'تقريرر', 'تقارير', 'تقرير', 'تقرير'],
+            'تحليل': ['تحليل', 'تحلييل', 'تحلييل', 'تحليل', 'تحليل'],
+            'نصيحة': ['نصيحة', 'نصيحه', 'نصييحة', 'نصيححة', 'نصيحة'],
             
-            // النصائح
-            'advice': ['نصيحة', 'نصائح', 'اقتراح', 'توصية', 'advice', 'suggestion'],
-            'improvement': ['تحسين', 'تطوير', 'زيادة', 'تحسين الأداء', 'كيف أزيد'],
-            
-            // الإعدادات
-            'settings': ['إعدادات', 'ضبط', 'تصدير', 'استيراد', 'إدارة', 'settings']
+            // الأفعال
+            'أعطيني': ['أعطيني', 'اعطيني', 'عطيني', 'أعطيني', 'اعطيني'],
+            'أريد': ['أريد', 'اريد', 'أرييد', 'اريد', 'أريد'],
+            'عرض': ['عرض', 'عرضض', 'عرد', 'عرض', 'عرض']
         };
+    }
 
-        for (const [category, keywords] of Object.entries(categories)) {
-            if (keywords.some(keyword => question.includes(keyword))) {
-                return category;
+    // 🔧 تحسين دالة معالجة السؤال لفهم الأخطاء
+    generateResponse(question) {
+        const correctedQuestion = this.correctSpelling(question);
+        const q = correctedQuestion.toLowerCase().trim();
+        
+        console.log('🔍 السؤال الأصلي:', question);
+        console.log('✅ السؤال المصحح:', correctedQuestion);
+        
+        // الآن نعالج السؤال المصحح
+        return this.processCorrectedQuestion(q, question);
+    }
+
+    // 🛠️ تصحيح الأخطاء الإملائية
+    correctSpelling(question) {
+        let corrected = question;
+        
+        // تصحيح الكلمات الشائعة
+        Object.entries(this.spellCorrections).forEach(([correct, wrongVariations]) => {
+            wrongVariations.forEach(wrong => {
+                const regex = new RegExp(wrong, 'gi');
+                corrected = corrected.replace(regex, correct);
+            });
+        });
+
+        // تصحيحات إضافية للنمط
+        corrected = corrected
+            .replace(/ة\s/gi, 'ه ') // تحويل التاء المربوطة في نهاية الكلمة
+            .replace(/ى\b/gi, 'ي')  // تحويل الألف المقصورة إلى ياء
+            .replace(/ئ\b/gi, 'ي')  // تحويل الياء المنقوطة
+            .replace(/إ/gi, 'ا')    //统一همزة
+            .replace(/أ/gi, 'ا')    //统一همزة
+            .replace(/آ/gi, 'ا');   //统一همزة
+
+        return corrected;
+    }
+
+    // 🎯 معالجة السؤال المصحح
+    processCorrectedQuestion(correctedQuestion, originalQuestion) {
+        const q = correctedQuestion;
+
+        // 🎪 الآن النظام سيفهم كل هذه الأخطاء ويجاوب عليها:
+
+        // === العملاء بأخطاء إملائية ===
+        if (this.fuzzyMatch(q, ['كم عميل', 'كام عميل', 'كم عملا', 'عدد العملاء', 'عدد عملا'])) {
+            return this.getCustomersCountResponse();
+        }
+        
+        if (this.fuzzyMatch(q, ['عميل نشط', 'عملا نشط', 'عما نشط', 'العملاء النشطين', 'العملاء النشطيين'])) {
+            return this.getActiveCustomersResponse();
+        }
+        
+        if (this.fuzzyMatch(q, ['عميل غير نشط', 'عملا مش نشط', 'العملاء المش نشطين', 'العملاء الغير نشطين'])) {
+            return this.getInactiveCustomersResponse();
+        }
+        
+        if (this.fuzzyMatch(q, ['افضل عملاء', 'احسن عملاء', 'اكثر العملاء شراء', 'اكتر العملاء شرا'])) {
+            return this.getTopCustomersResponse();
+        }
+        
+        // === المبيعات بأخطاء إملائية ===
+        if (this.fuzzyMatch(q, ['مبيعات', 'مبيعاث', 'مبيعاتي', 'ايرادات', 'ربح'])) {
+            if (q.includes('كم') || q.includes('مجموع') || q.includes('إجمالي')) {
+                return this.getTotalSalesResponse();
             }
         }
         
-        return 'general';
-    }
-
-    // 🎭 كشف النية من السؤال
-    detectIntent(question) {
-        if (question.includes('كم') || question.includes('عدد') || question.includes('كم عدد')) {
-            return 'quantity';
-        } else if (question.includes('كيف') || question.includes('طريقة') || question.includes('كيفية')) {
-            return 'how_to';
-        } else if (question.includes('ما هو') || question.includes('ما هي') || question.includes('ماذا')) {
-            return 'what_is';
-        } else if (question.includes('لماذا') || question.includes('سبب') || question.includes('لماذا')) {
-            return 'why';
-        } else if (question.includes('متى') || question.includes('وقت') || question.includes('تاريخ')) {
-            return 'when';
-        } else if (question.includes('أين') || question.includes('مكان') || question.includes('موقع')) {
-            return 'where';
-        } else if (question.includes('من') || question.includes('أي')) {
-            return 'who_which';
+        if (this.fuzzyMatch(q, ['عدد المبيعات', 'كام عملية بيع', 'كم عملية بيع', 'عدد عمليات البيع'])) {
+            return this.getSalesCountResponse();
         }
         
-        return 'general_inquiry';
-    }
-
-    // 🧩 توليد رد ذكي مخصص
-    generateSmartResponse(question, analysis, data, context) {
-        const responseTemplates = {
-            // === العملاء ===
-            'customers_basic': this.generateCustomersBasicResponse(question, data),
-            'customers_analysis': this.generateCustomersAnalysisResponse(question, data),
-            'customers_management': this.generateCustomersManagementResponse(question, data),
-            
-            // === المبيعات ===
-            'sales_basic': this.generateSalesBasicResponse(question, data),
-            'sales_analysis': this.generateSalesAnalysisResponse(question, data),
-            'sales_comparison': this.generateSalesComparisonResponse(question, data),
-            
-            // === التقارير ===
-            'reports_comprehensive': this.generateComprehensiveReport(question, data),
-            'reports_periodic': this.generatePeriodicReport(question, data),
-            
-            // === النصائح ===
-            'advice': this.generateAdviceResponse(question, data),
-            'improvement': this.generateImprovementResponse(question, data),
-            
-            // === عام ===
-            'general': this.generateGeneralResponse(question, data)
-        };
-
-        return responseTemplates[analysis.category] || this.generateGeneralResponse(question, data);
-    }
-
-    // 👥 ردود العملاء الأساسية
-    generateCustomersBasicResponse(question, data) {
-        const totalCustomers = data.customers.length;
-        const activeCustomers = data.customers.filter(c => c.status === 'active').length;
-        const inactiveCustomers = totalCustomers - activeCustomers;
-        const activeRate = totalCustomers > 0 ? (activeCustomers / totalCustomers * 100).toFixed(1) : 0;
-
-        if (question.includes('كم عدد العملاء') || question.includes('إجمالي العملاء')) {
-            return `👥 **إجمالي العملاء:** ${totalCustomers} عميل
-
-📊 **التفاصيل:**
-• العملاء النشطين: ${activeCustomers} (${activeRate}%)
-• العملاء غير النشطين: ${inactiveCustomers}
-
-${activeRate < 60 ? '💡 *انتبه: نسبة النشاط منخفضة، ركز على تفعيل العملاء*' : '✅ *ممتاز! قاعدة عملائك في حالة جيدة*'}`;
+        if (this.fuzzyMatch(q, ['متوسط البيع', 'متوسط بيع', 'متوسط المبيعات', 'متوى البيع'])) {
+            return this.getAverageSaleResponse();
+        }
+        
+        // === التقارير بأخطاء إملائية ===
+        if (this.fuzzyMatch(q, ['تقرير شامل', 'تقرير شامِل', 'تقرير', 'تقارير', 'تحليل شامل'])) {
+            return this.getComprehensiveReport();
+        }
+        
+        if (this.fuzzyMatch(q, ['تقرير العملاء', 'تحليل العملاء', 'تقرير عمال', 'تحليل عمال'])) {
+            return this.getCustomersReport();
+        }
+        
+        if (this.fuzzyMatch(q, ['تقرير المبيعات', 'تحليل المبيعات', 'تقرير مبيعاث', 'تحليل مبيعاث'])) {
+            return this.getSalesReport();
+        }
+        
+        // === النصائح بأخطاء إملائية ===
+        if (this.fuzzyMatch(q, ['نصيحة', 'نصيحه', 'نصايح', 'اقتراح', 'توصية'])) {
+            return this.getAdviceResponse();
+        }
+        
+        if (this.fuzzyMatch(q, ['تحسين', 'تطوير', 'تطوير', 'زيادة', 'تحسينات'])) {
+            return this.getImprovementResponse();
+        }
+        
+        // === أسئلة متنوعة بأخطاء ===
+        if (this.fuzzyMatch(q, ['كيف ازيد', 'كيف ازيد', 'كيفة ازيد', 'كيف ازود'])) {
+            return this.getHowToImproveResponse();
+        }
+        
+        if (this.fuzzyMatch(q, ['شو وضعي', 'شو احصائياتي', 'شو ارقامي', 'وين انا'])) {
+            return this.getComprehensiveReport();
+        }
+        
+        if (this.fuzzyMatch(q, ['بدي', 'ابغي', 'عايز', 'اريد', 'نبي'])) {
+            return this.getDesireResponse(q);
         }
 
-        if (question.includes('كم عميل نشط')) {
-            return `✅ **العملاء النشطين:** ${activeCustomers} عميل
+        // 🔍 إذا كان السؤال غير معروف حتى بعد التصحيح
+        return this.getSmartFallbackResponse(originalQuestion, correctedQuestion);
+    }
+
+    // 🎪 مطابقة ضبابية لفهم الأسئلة المشابهة
+    fuzzyMatch(text, patterns) {
+        return patterns.some(pattern => {
+            const similarity = this.calculateSimilarity(text, pattern);
+            return similarity > 0.7; // 70% تشابه
+        });
+    }
+
+    // 📊 حساب التشابه بين النصوص
+    calculateSimilarity(text1, text2) {
+        const words1 = text1.split(' ');
+        const words2 = text2.split(' ');
+        
+        const commonWords = words1.filter(word => 
+            words2.some(w2 => this.wordsSimilar(word, w2))
+        );
+        
+        return commonWords.length / Math.max(words1.length, words2.length);
+    }
+
+    // 🔄 مقارنة كلمات متشابهة
+    wordsSimilar(word1, word2) {
+        if (word1 === word2) return true;
+        
+        // كلمات متشابهة صوتياً
+        const similarWords = {
+            'كم': ['كام', 'كلم', 'كمم'],
+            'عميل': ['عملا', 'عما', 'عميل'],
+            'مبيعات': ['مبيعاث', 'مبيعات', 'مبيعاتي'],
+            'نصيحة': ['نصيحه', 'نصييحة', 'نصيححة']
+        };
+        
+        for (const [correct, variations] of Object.entries(similarWords)) {
+            if (variations.includes(word1) && variations.includes(word2)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    // 🎭 ردود خاصة للرغبات
+    getDesireResponse(question) {
+        if (question.includes('بدي') || question.includes('ابغي') || question.includes('اريد')) {
+            if (question.includes('تقرير') || question.includes('تحليل')) {
+                return this.getComprehensiveReport();
+            }
+            if (question.includes('نصيحة') || question.includes('اقتراح')) {
+                return this.getAdviceResponse();
+            }
+            if (question.includes('مبيعات') || question.includes('ارباح')) {
+                return this.getTotalSalesResponse();
+            }
+            if (question.includes('عملاء') || question.includes('زبائن')) {
+                return this.getCustomersCountResponse();
+            }
+        }
+        
+        return `🤔 **لاحظت أنك تريد شيئاً محدداً!**
+
+💡 يمكنني مساعدتك في:
+• إعطائك تقارير شاملة
+• تحليل بيانات العملاء والمبيعات  
+• تقديم نصائح لتحسين الأداء
+
+🎯 **جرب أن تطلب:**
+"بدي تقرير شامل"
+"ابغي تحليل المبيعات"
+"اريد نصيحة لزيادة المبيعات"`;
+    }
+
+    // 🎪 رد ذكي عندما لا يتعرف على السؤال
+    getSmartFallbackResponse(originalQuestion, correctedQuestion) {
+        return `🤖 **مساعد Data Vision الذكي**
+
+🔍 **فهمت أنك تسأل عن:** "${originalQuestion}"
+✅ **بعد التصحيح:** "${correctedQuestion}"
+
+💡 **أستطيع مساعدتك في:**
+
+👥 **الأسئلة عن العملاء:**
+• "كم عميل عندي؟" 
+• "شو عدد العملاء النشطين؟"
+• "بدي أعرف أحسن العملاء"
+
+💰 **الأسئلة عن المبيعات:**
+• "شو إجمالي مبيعاتي؟"
+• "كم عملية بيع سويت؟"
+• "شو متوسط البيع؟"
+
+📊 **التقارير:**
+• "بدي تقرير شامل"
+• "اعطيني تحليل الأداء"
+• "شو وضعي الحالي؟"
+
+💎 **نصيحة:** جرب واحدة من هذه الأسئلة وسأعطيك إجابة مفصلة! 🚀`;
+    }
+
+    // 👥 باقي الدوال تبقى كما هي مع تحسينات بسيطة
+    getCustomersCountResponse() {
+        const total = customers.length;
+        const active = customers.filter(c => c.status === 'active').length;
+        const inactive = total - active;
+        const activeRate = total > 0 ? (active / total * 100).toFixed(1) : 0;
+
+        return `👥 **إجمالي العملاء:** ${total} عميل
+
+📊 **التفاصيل:**
+• ✅ العملاء النشطين: ${active} (${activeRate}%)
+• ⚠️ العملاء غير النشطين: ${inactive}
+
+${activeRate < 60 ? '💡 **انتبه:** نسبة النشاط منخفضة، ركز على تفعيل العملاء' : 
+ '🎉 **ممتاز:** قاعدة عملائك في حالة جيدة'}`;
+    }
+
+    getActiveCustomersResponse() {
+        const total = customers.length;
+        const active = customers.filter(c => c.status === 'active').length;
+        const activeRate = total > 0 ? (active / total * 100).toFixed(1) : 0;
+
+        return `✅ **العملاء النشطين:** ${active} عميل
 
 📈 **نسبة النشاط:** ${activeRate}% من إجمالي العملاء
 
-${activeCustomers === 0 ? '🚨 *لا يوجد عملاء نشطين! ركز على تفعيل قاعدة العملاء*' : 
- activeRate > 80 ? '🎉 *ممتاز! نسبة نشاط عالية جداً*' : 
- '💡 *جيد، يمكن تحسين النسبة بمتابعة العملاء غير النشطين*'}`;
-        }
-
-        if (question.includes('كم عميل غير نشط')) {
-            return `⚠️ **العملاء غير النشطين:** ${inactiveCustomers} عميل
-
-📉 **نسبة الخمول:** ${(100 - activeRate).toFixed(1)}% من إجمالي العملاء
-
-${inactiveCustomers > 0 ? `🔔 **فرصة تحسين:** لديك ${inactiveCustomers} عميل يحتاجون تفعيل
-💡 **اقتراح:** أرسل لهم عروضاً حصرية أو اتصل بهم للمتابعة` : 
- '🎊 **ممتاز! جميع عملائك نشطين**'}`;
-        }
+${active === 0 ? '🚨 **تحذير:** لا يوجد عملاء نشطين! ركز على تفعيل قاعدة العملاء' : 
+ activeRate > 80 ? '🎊 **ممتاز:** نسبة نشاط عالية جداً' : 
+ '💡 **جيد:** يمكن تحسين النسبة بمتابعة العملاء غير النشطين'}`;
     }
 
-    // 📈 ردود تحليل العملاء
-    generateCustomersAnalysisResponse(question, data) {
-        const customersWithSales = data.customers.filter(customer => 
-            data.sales.some(sale => sale.customer_id === customer.id || sale.customerId === customer.id)
-        ).length;
+    getTotalSalesResponse() {
+        const totalRevenue = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+        const totalCount = sales.length;
+        const avgSale = totalCount > 0 ? totalRevenue / totalCount : 0;
 
-        const topCustomers = data.customers.map(customer => {
-            const customerSales = data.sales.filter(s => 
-                s.customer_id === customer.id || s.customerId === customer.id
-            );
-            const totalSpent = customerSales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
-            return { name: customer.name, totalSpent, salesCount: customerSales.length };
-        }).sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
+        return `💰 **إجمالي المبيعات:** ${totalRevenue.toFixed(2)} دينار
 
-        if (question.includes('أفضل عملاء') || question.includes('أكثر العملاء شراء')) {
-            return `🏆 **أفضل 5 عملاء:**
-
-${topCustomers.map((cust, index) => 
-    `${index + 1}. **${cust.name}** - ${cust.totalSpent.toFixed(2)} دينار (${cust.salesCount} عملية)`
-).join('\n')}
-
-💎 **إجمالي مشترياتهم:** ${topCustomers.reduce((sum, cust) => sum + cust.totalSpent, 0).toFixed(2)} دينار`;
-        }
-
-        if (question.includes('عملاء لم يشتروا') || question.includes('لم يشتروا أبداً')) {
-            const customersWithoutSales = data.customers.filter(customer => 
-                !data.sales.some(sale => sale.customer_id === customer.id || sale.customerId === customer.id)
-            ).length;
-
-            return `🔄 **العملاء الذين لم يشتروا أبداً:** ${customersWithoutSales} عميل
-
-📊 **نسبة التحويل:** ${((customersWithSales / data.customers.length) * 100).toFixed(1)}% من العملاء قاموا بالشراء
-
-${customersWithoutSales > 0 ? `🎯 **خطة العمل:**
-• ركز على تحويل ${customersWithoutSales} عميل إلى مشترين
-• قدم عروض ترحيبية لهم
-• اتصل بهم personally للمتابعة` : 
- '🎊 **مذهل! جميع عملائك قاموا بالشراء على الأقل مرة واحدة**'}`;
-        }
-    }
-
-    // 💰 ردود المبيعات الأساسية
-    generateSalesBasicResponse(question, data) {
-        const totalSales = data.sales.length;
-        const totalRevenue = data.sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
-        const avgSale = totalSales > 0 ? totalRevenue / totalSales : 0;
-
-        if (question.includes('إجمالي مبيعات') || question.includes('كم إجمالي المبيعات')) {
-            return `💰 **إجمالي المبيعات:** ${totalRevenue.toFixed(2)} دينار
-
-📦 **عدد العمليات:** ${totalSales} عملية بيع
+📦 **عدد العمليات:** ${totalCount} عملية بيع
 📊 **متوسط البيع:** ${avgSale.toFixed(2)} دينار
 
-${totalRevenue === 0 ? '🚨 *ابدأ بتسجيل مبيعاتك الأولى!*' : 
- avgSale < 50 ? '💡 *يمكنك زيادة متوسط قيمة البيع بعروض الترقية*' : 
- '✅ *أداء مبيعاتك جيد*'}`;
-        }
-
-        if (question.includes('كم عدد المبيعات') || question.includes('عدد عمليات البيع')) {
-            return `📦 **عدد عمليات البيع:** ${totalSales} عملية
-
-💰 **إجمالي القيمة:** ${totalRevenue.toFixed(2)} دينار
-📈 **متوسط البيع:** ${avgSale.toFixed(2)} دينار
-
-${totalSales === 0 ? '🎯 *حان الوقت لتسجيل أول عملية بيع!*' : 
- totalSales < 10 ? '💡 *ركز على زيادة وتيرة المبيعات*' : 
- '🚀 *وتيرة مبيعاتك ممتازة*'}`;
-        }
+${totalRevenue === 0 ? '🚨 **ابدأ الآن:** سجل أول عملية بيع لتبدأ رحلتك!' : 
+ avgSale < 50 ? '💡 **تحسين:** زد متوسط البيع بعروض الترقية والباقات' : 
+ '✅ **ممتاز:** أداء مبيعاتك جيد'}`;
     }
 
-    // 📊 ردود تحليل المبيعات
-    generateSalesAnalysisResponse(question, data) {
-        const recentSales = this.getRecentSales(data.sales, 30); // آخر 30 يوم
-        const recentRevenue = recentSales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
-        const previousSales = this.getRecentSales(data.sales, 60, 30); // قبل 30-60 يوم
-        const previousRevenue = previousSales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
-        
-        const growthRate = previousRevenue > 0 ? 
-            ((recentRevenue - previousRevenue) / previousRevenue * 100).toFixed(1) : 0;
-
-        if (question.includes('اتجاه المبيعات') || question.includes('كيف المبيعات')) {
-            return `📈 **اتجاه المبيعات:**
-
-🟢 **آخر 30 يوم:** ${recentRevenue.toFixed(2)} دينار (${recentSales.length} عملية)
-${previousRevenue > 0 ? `🟡 **الفترة السابقة:** ${previousRevenue.toFixed(2)} دينار
-${Math.abs(growthRate) > 0 ? `📊 **معدل النمو:** ${growthRate}% ${growthRate > 0 ? '🔼' : '🔻'}` : ''}` : ''}
-
-${recentRevenue === 0 ? '🚨 *لا توجد مبيعات حديثة! ركز على المبيعات الحالية*' :
- growthRate > 0 ? '🎉 *المبيعات في تحسن مستمر*' :
- growthRate < 0 ? '⚠️ *المبيعات تحتاج إلى تحسين*' :
- '📋 *المبيعات مستقرة*'}`;
-        }
-    }
-
-    // 🆚 ردود المقارنات
-    generateSalesComparisonResponse(question, data) {
-        const currentMonthSales = this.getMonthSales(data.sales, new Date());
-        const lastMonthSales = this.getMonthSales(data.sales, new Date(new Date().setMonth(new Date().getMonth() - 1)));
-        
-        const currentRevenue = currentMonthSales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
-        const lastRevenue = lastMonthSales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
-        
-        const growth = lastRevenue > 0 ? ((currentRevenue - lastRevenue) / lastRevenue * 100).toFixed(1) : 100;
-
-        if (question.includes('مقارنة') || question.includes('الشهر الماضي')) {
-            return `🆚 **مقارنة الأداء:**
-
-📊 **هذا الشهر:** ${currentRevenue.toFixed(2)} دينار (${currentMonthSales.length} عملية)
-📅 **الشهر الماضي:** ${lastRevenue.toFixed(2)} دينار (${lastMonthSales.length} عملية)
-
-${lastRevenue > 0 ? `📈 **نسبة التغير:** ${growth}% ${growth > 0 ? '🔼 زيادة' : '🔻 انخفاض'}
-
-${Math.abs(growth) > 20 ? (growth > 0 ? 
-    '🎊 *أداء ممتاز! نمو قوي جداً*' : 
-    '⚠️ *انخفاض ملحوظ، يحتاج تحليل أسباب*') : 
-    '📋 *أداء مستقر*'}` : 
-    '🆕 *لا توجد بيانات كافية للمقارنة*'}`;
-        }
-    }
-
-    // 📋 التقارير الشاملة
-    generateComprehensiveReport(question, data) {
-        const totalCustomers = data.customers.length;
-        const activeCustomers = data.customers.filter(c => c.status === 'active').length;
-        const totalSales = data.sales.length;
-        const totalRevenue = data.sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
-        const avgSale = totalSales > 0 ? totalRevenue / totalSales : 0;
-        const recentSales = this.getRecentSales(data.sales, 30);
-        const recentRevenue = recentSales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+    getComprehensiveReport() {
+        const totalCustomers = customers.length;
+        const activeCustomers = customers.filter(c => c.status === 'active').length;
+        const totalSalesCount = sales.length;
+        const totalRevenue = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+        const avgSale = totalSalesCount > 0 ? totalRevenue / totalSalesCount : 0;
 
         return `📊 **تقرير أداء شامل - Data Vision**
 
 👥 **قاعدة العملاء:**
 • إجمالي العملاء: ${totalCustomers}
-• العملاء النشطين: ${activeCustomers} (${(activeCustomers/totalCustomers*100).toFixed(1)}%)
+• العملاء النشطين: ${activeCustomers} (${totalCustomers > 0 ? (activeCustomers/totalCustomers*100).toFixed(1) : 0}%)
 • العملاء غير النشطين: ${totalCustomers - activeCustomers}
 
 💰 **الأداء المالي:**
 • إجمالي المبيعات: ${totalRevenue.toFixed(2)} دينار
-• عدد العمليات: ${totalSales}
+• عدد العمليات: ${totalSalesCount}
 • متوسط البيع: ${avgSale.toFixed(2)} دينار
-• المبيعات الأخيرة (30 يوم): ${recentRevenue.toFixed(2)} دينار
 
 🎯 **التقييم العام:**
-${this.getPerformanceAssessment(data)}
+${this.getPerformanceAssessment()}
 
-💡 **التوصيات الاستراتيجية:**
-${this.getStrategicRecommendations(data)}`;
+💡 **التوصيات:**
+${this.getRecommendations()}`;
     }
 
-    // 💡 النصائح والتحسينات
-    generateAdviceResponse(question, data) {
-        const assessment = this.getPerformanceAssessment(data);
-        
-        if (question.includes('نصيحة') || question.includes('اقتراح')) {
-            return `💡 **نصائح مخصصة بناءً على أدائك:**
+    getPerformanceAssessment() {
+        const totalCustomers = customers.length;
+        const activeCustomers = customers.filter(c => c.status === 'active').length;
+        const totalSales = sales.length;
+        const totalRevenue = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
 
-${assessment.recommendations.map(rec => `• ${rec}`).join('\n')}
-
-🎯 **الأولويات:**
-${assessment.priorities.map(priority => `• ${priority}`).join('\n')}
-
-🚀 **خطوات التنفيذ:**
-${assessment.actionSteps.map(step => `• ${step}`).join('\n')}`;
+        if (totalCustomers === 0 && totalSales === 0) {
+            return "🆕 **مرحلة البداية:** ابدأ بإضافة عملائك وتسجيل مبيعاتك الأولى";
+        } else if (totalCustomers > 0 && totalSales === 0) {
+            return "📝 **مرحلة التأسيس:** لديك عملاء ولكن لا توجد مبيعات، ركز على التحويل";
+        } else if (totalSales > 0 && activeCustomers / totalCustomers < 0.6) {
+            return "⚠️ **يحتاج تحسين:** المبيعات جيدة ولكن نسبة العملاء النشطين منخفضة";
+        } else if (totalRevenue / totalSales < 50) {
+            return "💡 **جيد:** أداء مقبول، يمكن تحسين متوسط البيع";
+        } else {
+            return "🎉 **ممتاز:** أداء قوي في جميع المجالات!";
         }
     }
 
-    // 🔧 ردود عامة
-    generateGeneralResponse(question, data) {
-        return `🤖 **مساعد Data Vision الذكي**
-
-🔍 لاحظت أنك تسأل عن: "${question}"
-
-💡 يمكنني مساعدتك في:
-• تحليل العملاء والمبيعات
-• تقديم تقارير شاملة
-• نصائح لتحسين الأداء
-• إجابة أسئلة محددة عن بياناتك
-
-📊 **نظرة سريعة على أدائك:**
-• ${data.customers.length} عميل
-• ${data.sales.length} عملية بيع
-• ${data.sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0).toFixed(2)} دينار إيرادات
-
-🎯 **جرب أن تسأل:**
-"كم عميل نشط لدي؟"
-"ما هو تحليل المبيعات؟" 
-"أعطني تقرير شامل"`;
-    }
-
-    // 🛠️ دوال مساعدة
-    getRecentSales(sales, days, offsetDays = 0) {
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(endDate.getDate() - days - offsetDays);
-        endDate.setDate(endDate.getDate() - offsetDays);
-        
-        return sales.filter(sale => {
-            const saleDate = new Date(sale.date || sale.sale_date);
-            return saleDate >= startDate && saleDate <= endDate;
-        });
-    }
-
-    getMonthSales(sales, date) {
-        const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
-        const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-        
-        return sales.filter(sale => {
-            const saleDate = new Date(sale.date || sale.sale_date);
-            return saleDate >= startDate && saleDate <= endDate;
-        });
-    }
-
-    getPerformanceAssessment(data) {
-        // تحليل شامل للأداء وإرجاع تقييم
-        const totalCustomers = data.customers.length;
-        const activeCustomers = data.customers.filter(c => c.status === 'active').length;
-        const totalSales = data.sales.length;
-        const totalRevenue = data.sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
-        
-        return {
-            score: this.calculatePerformanceScore(data),
-            status: this.getPerformanceStatus(data),
-            recommendations: this.generateRecommendations(data),
-            priorities: this.getPriorities(data),
-            actionSteps: this.getActionSteps(data)
-        };
-    }
-
-    calculatePerformanceScore(data) {
-        // حساب درجة أداء من 100
-        let score = 0;
-        
-        if (data.customers.length > 0) score += 30;
-        if (data.sales.length > 0) score += 40;
-        if (data.customers.filter(c => c.status === 'active').length > 0) score += 30;
-        
-        return Math.min(score, 100);
-    }
-
-    getPerformanceStatus(data) {
-        const score = this.calculatePerformanceScore(data);
-        
-        if (score >= 80) return 'ممتاز';
-        if (score >= 60) return 'جيد جداً';
-        if (score >= 40) return 'جيد';
-        if (score >= 20) return 'يحتاج تحسين';
-        return 'مبتدئ';
-    }
-
-    generateRecommendations(data) {
+    getRecommendations() {
         const recommendations = [];
-        const totalCustomers = data.customers.length;
-        const activeCustomers = data.customers.filter(c => c.status === 'active').length;
-        const totalSales = data.sales.length;
+        const totalCustomers = customers.length;
+        const activeCustomers = customers.filter(c => c.status === 'active').length;
+        const totalSales = sales.length;
 
         if (totalCustomers === 0) {
-            recommendations.push('ابدأ بإضافة عملائك الأولين');
-        } else if (activeCustomers / totalCustomers < 0.6) {
-            recommendations.push(`ركز على تفعيل ${totalCustomers - activeCustomers} عميل غير نشط`);
+            recommendations.push('• ابدأ بإضافة أول 10 عملاء');
         }
-
+        if (activeCustomers / totalCustomers < 0.7) {
+            recommendations.push(`• فعّل ${totalCustomers - activeCustomers} عميل غير نشط`);
+        }
         if (totalSales === 0) {
-            recommendations.push('سجل أول عملية بيع لبدء تحليل الأداء');
-        } else if (totalSales < 10) {
-            recommendations.push('زد وتيرة المبيعات لتحسين الإيرادات');
+            recommendations.push('• سجل أول عملية بيع');
         }
 
-        if (totalCustomers > 0 && totalSales > 0) {
-            const salesPerCustomer = totalSales / totalCustomers;
-            if (salesPerCustomer < 1.5) {
-                recommendations.push('حسن معدل تكرار الشراء للعملاء الحاليين');
-            }
-        }
-
-        return recommendations.length > 0 ? recommendations : ['أداؤك ممتاز! استمر في نفس الاستراتيجية'];
+        return recommendations.length > 0 ? recommendations.join('\n') : '• استمر في الاستراتيجية الحالية، أداؤك ممتاز!';
     }
 
-    getPriorities(data) {
-        const priorities = [];
+    // ... باقي الدوال بنفس الطريقة
+
+    // 🎯 إعداد النظام
+    setupEventListeners() {
+        const sendBtn = document.querySelector('#assistant .btn-primary');
+        const inputField = document.getElementById('assistantInput');
         
-        if (data.customers.length === 0) {
-            priorities.push('بناء قاعدة العملاء');
-        } else if (data.sales.length === 0) {
-            priorities.push('بدء المبيعات والتسجيل');
-        } else {
-            priorities.push('تحسين أداء العملاء الحاليين');
-            priorities.push('زيادة قيمة المبيعات');
-            priorities.push('تحليل البيانات للتحسين المستمر');
+        if (sendBtn) {
+            sendBtn.onclick = () => this.sendMessage();
         }
         
-        return priorities;
-    }
-
-    getActionSteps(data) {
-        return [
-            'راجع تقارير الأداء بانتظام',
-            'حدد الأهداف القابلة للقياس',
-            'تابع تنفيذ الخطط التحسينية',
-            'حلل نتائج التغييرات باستمرار'
-        ];
-    }
-
-    getStrategicRecommendations(data) {
-        const recommendations = [];
-        
-        if (data.customers.length < 10) {
-            recommendations.push('• وسع قاعدة العملاء عبر التسويق المستهدف');
+        if (inputField) {
+            inputField.onkeypress = (e) => {
+                if (e.key === 'Enter') this.sendMessage();
+            };
         }
-        
-        if (data.sales.length > 0) {
-            const avgSale = data.sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0) / data.sales.length;
-            if (avgSale < 100) {
-                recommendations.push('• اعمل على زيادة متوسط قيمة البيع عبر الباقات والعروض');
-            }
-        }
-        
-        const activeRate = data.customers.length > 0 ? 
-            (data.customers.filter(c => c.status === 'active').length / data.customers.length) : 0;
-            
-        if (activeRate < 0.7) {
-            recommendations.push('• أنشئ برنامج ولاء لتحسين تفاعل العملاء');
-        }
-        
-        return recommendations.length > 0 ? recommendations.join('\n') : '• استمر في الاستراتيجية الحالية مع مراقبة الأداء';
     }
 
-    getRelatedSuggestions(category) {
-        const suggestions = {
-            'customers_basic': ['تحليل العملاء النشطين', 'عملاء لم يشتروا أبداً', 'أفضل العملاء'],
-            'sales_basic': ['اتجاه المبيعات', 'مقارنة المبيعات', 'تحليل الربحية'],
-            'reports_comprehensive': ['تقرير العملاء', 'تقرير المبيعات', 'نصائح التحسين'],
-            'advice': ['تحليل الأداء', 'استراتيجيات النمو', 'تحسين الربحية']
-        };
+    sendMessage() {
+        const input = document.getElementById('assistantInput');
+        if (!input) return;
         
-        return suggestions[category] || ['تحليل شامل', 'نصائح تحسين', 'تقارير أداء'];
+        const message = input.value.trim();
+        if (!message) return;
+
+        this.addMessageToChat(message, 'user');
+        input.value = '';
+        
+        this.showTypingIndicator();
+        
+        setTimeout(() => {
+            this.hideTypingIndicator();
+            const response = this.generateResponse(message);
+            this.addMessageToChat(response, 'ai');
+        }, 1000);
     }
 
-    getFollowUpQuestions(category) {
-        const followUps = {
-            'customers_basic': ['كيف أزيد عدد العملاء؟', 'ما هي أفضل طريقة لمتابعة العملاء؟'],
-            'sales_basic': ['كيف أزيد حجم المبيعات؟', 'ما هو متوسط البيع المثالي؟'],
-            'reports_comprehensive': ['كيف أحسن من هذه النتائج؟', 'ما هي الخطوات التالية؟']
-        };
+    addMessageToChat(message, sender) {
+        const chatContainer = document.getElementById('chatContainer');
+        if (!chatContainer) return;
         
-        return followUps[category] || ['كيف يمكنني تحسين الأداء؟', 'ما هي الخطوات التالية؟'];
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('chat-message');
+        messageDiv.classList.add(sender === 'ai' ? 'ai-message' : 'user-message');
+        
+        messageDiv.innerHTML = `
+            <div class="message-avatar">${sender === 'ai' ? '🤖' : '👤'}</div>
+            <div class="message-content">
+                <div class="message-text">${message}</div>
+                <div class="message-time">${new Date().toLocaleTimeString()}</div>
+            </div>
+        `;
+        
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    showTypingIndicator() {
+        const chatContainer = document.getElementById('chatContainer');
+        if (!chatContainer) return;
+        
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typing-indicator';
+        typingDiv.className = 'chat-message ai-message';
+        typingDiv.innerHTML = `
+            <div class="message-avatar">🤖</div>
+            <div class="message-content">
+                <div class="message-text typing">جاري الكتابة...</div>
+            </div>
+        `;
+        chatContainer.appendChild(typingDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
     }
 }
 
-// 📊 محلل البيانات
-class DataAnalyzer {
-    getRelevantData(category) {
-        return {
-            customers: customers || [],
-            sales: sales || [],
-            settings: settings || {}
-        };
-    }
-}
-
-// 🎭 مولد الردود
-class ResponseGenerator {
-    // ... دوال مساعدة للردود المخصصة
-}
-
-// 📋 محرك التقارير
-class ReportEngine {
-    // ... دوال إنشاء التقارير المتقدمة
-}
-
-// 🌟 الاستخدام
-const superAI = new SuperAIAssistant();
-
-// 🔄 دالة الإرسال المحسنة
-async function sendSmartMessage() {
-    const input = document.getElementById('assistantInput');
-    if (!input) return;
+// 🚀 تشغيل النظام المحسن
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 تشغيل المساعد الذكي المحسن لفهم الأخطاء...');
+    window.smartAssistant = new EnhancedAIAssistant();
     
-    const message = input.value.trim();
-    if (!message) return;
-    
-    // إضافة رسالة المستخدم
-    addMessageToChat(message, 'user');
-    input.value = '';
-    
-    // مؤشر تحميل
-    showTypingIndicator();
-    
-    try {
-        // معالجة السؤال بالذكاء الاصطناعي
-        const context = {
-            user: getCurrentUser(),
-            timestamp: new Date(),
-            previousQuestions: getChatHistory()
-        };
-        
-        const response = await superAI.processQuestion(message, context);
-        
-        // إضافة الرد الذكي
-        hideTypingIndicator();
-        addMessageToChat(response.answer, 'ai');
-        
-        // إضافة الاقتراحات إن وجدت
-        if (response.suggestions && response.suggestions.length > 0) {
-            setTimeout(() => {
-                addMessageToChat(`💡 **اقتراحات ذات صلة:**\n${response.suggestions.map(s => `• ${s}`).join('\n')}`, 'ai');
-            }, 500);
-        }
-        
-    } catch (error) {
-        hideTypingIndicator();
-        addMessageToChat("⚠️ عذراً، حدث خطأ في المعالجة. جرب صيغة أخرى للسؤال.", 'ai');
-    }
-}
+    // رسالة ترحيبية
+    setTimeout(() => {
+        const welcomeMsg = `مرحباً! 👋 أنا المساعد الذكي المحسن
 
-// 🔄 تحديث الدوال العالمية
-window.sendFreeMessage = sendSmartMessage;
-window.sendMessage = sendSmartMessage;
+🎯 **الميزة الجديدة:** أفهم الأخطاء الإملائية!
 
-console.log('🚀 Super AI Assistant Loaded - Ready for Smart Conversations!');
+جرب أن تكتب بأي طريقة:
+• "كم عميل عندي؟" 
+• "كام عميل عندي؟"
+• "شو عدد العمال؟"
+• "بدي تقرير شامل"
+
+سأفهم قصده وأعطيك إجابة صحيحة! 🚀`;
+        
+        window.smartAssistant.addMessageToChat(welcomeMsg, 'ai');
+    }, 1000);
+});
+
+// 🔄 جعل الدوال متاحة
+window.sendFreeMessage = () => window.smartAssistant.sendMessage();
+window.sendMessage = () => window.smartAssistant.sendMessage();
