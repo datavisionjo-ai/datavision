@@ -62,6 +62,29 @@ CREATE INDEX idx_sales_date ON sales(sale_date);
 SELECT '✅ تم إنشاء الجداول بنجاح' as message;
 `;
 
+-- تحديث جدول المستخدمين بإضافة حقول جديدة
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB;
+
+-- إنشاء جدول سجل النشاطات
+CREATE TABLE IF NOT EXISTS user_activities (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    details TEXT,
+    timestamp TIMESTAMP DEFAULT NOW()
+);
+
+-- إنشاء indexes للأداء
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_created_by ON users(created_by);
+CREATE INDEX IF NOT EXISTS idx_user_activities_user_id ON user_activities(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_activities_timestamp ON user_activities(timestamp);
+
 // دالة تهيئة قاعدة البيانات
 async function initializeDatabase() {
     let client;
