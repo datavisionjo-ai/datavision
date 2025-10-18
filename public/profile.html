@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حسابي - Data Vision</title>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+    <div class="notification" id="notification"></div>
+
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; align-items: center; gap: 20px; justify-content: center; margin-bottom: 10px;">
+                <img src="../logo.png" alt="Data Vision Logo" style="width: 100px; height: 100px;">
+                <h1 style="margin: 0;">حسابي</h1>
+            </div>
+            <div class="nav-tabs">
+                <button class="tab-btn" onclick="window.location.href='index.html'">🏠 الرئيسية</button>
+                <button class="tab-btn active" onclick="switchTab('profile')">👤 حسابي</button>
+                <button class="tab-btn" onclick="switchTab('employees')">👥 الموظفين</button>
+                <button class="tab-btn" onclick="switchTab('security')">🔒 الأمان</button>
+                <button class="btn btn-danger" onclick="logout()">🚪 تسجيل خروج</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- قسم الملف الشخصي -->
+            <div id="profile" class="tab-content active">
+                <h2 class="page-title-black">الملف الشخصي</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>معلومات الحساب</h3>
+                        <div class="value" id="userName">-</div>
+                        <div class="value" id="userEmail">-</div>
+                        <div class="value" id="userRole">-</div>
+                    </div>
+                    
+                    <div class="stat-card success">
+                        <h3>إحصائياتي</h3>
+                        <div class="value" id="myCustomers">0</div>
+                        <div class="value" id="mySales">0</div>
+                        <div class="value" id="myRevenue">0 دينار</div>
+                    </div>
+                    
+                    <div class="stat-card info">
+                        <h3>النشاط</h3>
+                        <div class="value" id="lastLogin">-</div>
+                        <div class="value" id="accountAge">-</div>
+                        <div class="value" id="activeStatus">-</div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>🔄 تحديث المعلومات</h3>
+                    <form onsubmit="updateProfile(event)">
+                        <div class="form-group">
+                            <label>الاسم الكامل</label>
+                            <input type="text" id="profileName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>البريد الإلكتروني</label>
+                            <input type="email" id="profileEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>كلمة المرور الحالية (للتأكيد)</label>
+                            <input type="password" id="currentPassword">
+                        </div>
+                        <div class="form-group">
+                            <label>كلمة المرور الجديدة (اختياري)</label>
+                            <input type="password" id="newPassword">
+                        </div>
+                        <button type="submit" class="btn btn-primary">💾 حفظ التغييرات</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- قسم إدارة الموظفين -->
+            <div id="employees" class="tab-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="page-title-black">إدارة الموظفين</h2>
+                    <button class="btn btn-primary" onclick="openAddEmployeeModal()">➕ إضافة موظف</button>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="employeeSearch" placeholder="🔍 ابحث عن موظف..." onkeyup="filterEmployees()">
+                </div>
+
+                <div class="customers-grid" id="employeesList">
+                    <!-- سيتم عرض الموظفين هنا -->
+                </div>
+            </div>
+
+            <!-- قسم الأمان والإعدادات -->
+            <div id="security" class="tab-content">
+                <h2 class="page-title-black">الإعدادات والأمان</h2>
+                
+                <div class="settings-section">
+                    <h3>🔐 إعدادات الصلاحيات</h3>
+                    <div class="form-group">
+                        <label>الصلاحية الافتراضية للموظفين الجدد</label>
+                        <select id="defaultRole">
+                            <option value="employee">موظف</option>
+                            <option value="viewer">مشاهد فقط</option>
+                            <option value="manager">مدير</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveRoleSettings()">💾 حفظ الإعدادات</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>📊 تقارير النشاط</h3>
+                    <div class="form-group">
+                        <label>عرض سجل النشاطات</label>
+                        <select id="activityPeriod" onchange="loadActivityLog()">
+                            <option value="7">آخر 7 أيام</option>
+                            <option value="30">آخر 30 يوم</option>
+                            <option value="90">آخر 90 يوم</option>
+                        </select>
+                    </div>
+                    <div id="activityLog" class="activity-log">
+                        <!-- سجل النشاطات -->
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>⚠️ إجراءات متقدمة</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-warning" onclick="exportMyData()">📤 تصدير بياناتي</button>
+                        <button class="btn btn-danger" onclick="showDeleteAccountModal()">🗑️ حذف الحساب</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إضافة موظف -->
+    <div id="employeeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="employeeModalTitle">إضافة موظف جديد</h2>
+                <button class="close-btn" onclick="closeModal('employeeModal')">&times;</button>
+            </div>
+            <form onsubmit="saveEmployee(event)">
+                <div class="form-group">
+                    <label>اسم الموظف *</label>
+                    <input type="text" id="employeeName" required>
+                </div>
+                <div class="form-group">
+                    <label>البريد الإلكتروني *</label>
+                    <input type="email" id="employeeEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور *</label>
+                    <input type="password" id="employeePassword" required>
+                </div>
+                <div class="form-group">
+                    <label>المكانة الوظيفية</label>
+                    <input type="text" id="employeePosition" placeholder="مثال: مندوب مبيعات">
+                </div>
+                <div class="form-group">
+                    <label>الصلاحية *</label>
+                    <select id="employeeRole" required>
+                        <option value="viewer">مشاهد فقط</option>
+                        <option value="employee">موظف</option>
+                        <option value="manager">مدير</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>الصلاحيات المحددة</label>
+                    <div class="permissions-grid">
+                        <label><input type="checkbox" name="permissions" value="view_customers"> مشاهدة العملاء</label>
+                        <label><input type="checkbox" name="permissions" value="edit_customers"> تعديل العملاء</label>
+                        <label><input type="checkbox" name="permissions" value="view_sales"> مشاهدة المبيعات</label>
+                        <label><input type="checkbox" name="permissions" value="add_sales"> إضافة مبيعات</label>
+                        <label><input type="checkbox" name="permissions" value="view_reports"> مشاهدة التقارير</label>
+                        <label><input type="checkbox" name="permissions" value="manage_users"> إدارة المستخدمين</label>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary">💾 حفظ</button>
+                    <button type="button" class="btn btn-danger" onclick="closeModal('employeeModal')">❌ إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api-client.js"></script>
+    <script src="js/profile-management.js"></script>
+</body>
+</html>
