@@ -59,8 +59,8 @@ async function loadData() {
                 getSales()
             ]);
 
-            customers = customersData;
-            sales = salesData;
+            customers = customersData || [];
+            sales = salesData || [];
             
             console.log('✅ تم تحميل البيانات من السيرفر:', {
                 customers: customers.length,
@@ -76,33 +76,61 @@ async function loadData() {
 }
 
 function loadFromLocalStorage() {
-    const savedCustomers = localStorage.getItem('databuddy_customers');
-    const savedSales = localStorage.getItem('databuddy_sales');
-    const savedSettings = localStorage.getItem('databuddy_settings');
-    
-    if (savedCustomers) customers = JSON.parse(savedCustomers);
-    if (savedSales) sales = JSON.parse(savedSales);
-    if (savedSettings) settings = JSON.parse(savedSettings);
-    
-    console.log('📁 تم تحميل البيانات من التخزين المحلي:', {
-        customers: customers.length,
-        sales: sales.length
-    });
+    try {
+        const savedCustomers = localStorage.getItem('databuddy_customers');
+        const savedSales = localStorage.getItem('databuddy_sales');
+        const savedSettings = localStorage.getItem('databuddy_settings');
+        
+        if (savedCustomers) {
+            customers = JSON.parse(savedCustomers);
+            if (!Array.isArray(customers)) customers = [];
+        } else {
+            customers = [];
+        }
+        
+        if (savedSales) {
+            sales = JSON.parse(savedSales);
+            if (!Array.isArray(sales)) sales = [];
+        } else {
+            sales = [];
+        }
+        
+        if (savedSettings) {
+            try {
+                settings = JSON.parse(savedSettings);
+            } catch (e) {
+                settings = { defaultMessage: 'مرحباً {name}، شكراً لاختيارك DataBuddy!' };
+            }
+        }
+        
+        console.log('📁 تم تحميل البيانات من التخزين المحلي:', {
+            customers: customers.length,
+            sales: sales.length
+        });
+    } catch (error) {
+        console.error('❌ خطأ في تحميل البيانات المحلية:', error);
+        customers = [];
+        sales = [];
+        settings = { defaultMessage: 'مرحباً {name}، شكراً لاختيارك DataBuddy!' };
+    }
 }
 
 async function saveData() {
     try {
         if (isLoggedIn()) {
-            // البيانات تحفظ في السيرفر تلقائياً عند كل عملية
             console.log('💾 البيانات محفوظة في السيرفر');
         } else {
             localStorage.setItem('databuddy_customers', JSON.stringify(customers));
             localStorage.setItem('databuddy_sales', JSON.stringify(sales));
             localStorage.setItem('databuddy_settings', JSON.stringify(settings));
-            console.log('💾 البيانات محفوظة محلياً');
+            console.log('💾 البيانات محفوظة محلياً:', {
+                customers: customers.length,
+                sales: sales.length
+            });
         }
     } catch (error) {
         console.error('❌ خطأ في حفظ البيانات:', error);
+        showNotification('خطأ في حفظ البيانات', 'error');
     }
 }
 
@@ -465,6 +493,188 @@ async function analyzeBusinessData() {
     }
 }
 
+// ============ نظام استيراد وتصدير البيانات ============
+
+function openExportModal() {
+    document.getElementById('exportModal').classList.add('active');
+}
+
+function openImportModal() {
+    document.getElementById('importModal').classList.add('active');
+}
+
+function exportData() {
+    try {
+        const data = {
+            customers: customers,
+            sales: sales,
+            settings: settings,
+            exportDate: new Date().toISOString(),
+            version: '1.0'
+        };
+        
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.download = `datavision-backup-${new Date().toISOString().split('T')[0]}.json`;
+        link.href = url;
+        link.click();
+        
+        URL.revokeObjectURL(url);
+        showNotification('تم تصدير البيانات بنجاح!', 'success');
+        closeModal('exportModal');
+    } catch (error) {
+        console.error('خطأ في التصدير:', error);
+        showNotification('خطأ في تصدير البيانات', 'error');
+    }
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // التحقق من صحة هيكل البيانات
+            if (!importedData || (typeof importedData !== 'object')) {
+                throw new Error('ملف غير صالح');
+            }
+            
+            // معالجة البيانات المستوردة
+            let importedCustomers = [];
+            let importedSales = [];
+            let importedSettings = settings;
+            
+            if (Array.isArray(importedData)) {
+                // إذا كان الملف يحتوي على مصفوفة مباشرة (نسخة قديمة)
+                importedCustomers = importedData.filter(item => item.phone);
+                importedSales = importedData.filter(item => item.amount);
+            } else if (importedData.customers || importedData.sales) {
+                // إذا كان الملف يحتوي على هيكل منظم
+                importedCustomers = Array.isArray(importedData.customers) ? importedData.customers : [];
+                importedSales = Array.isArray(importedData.sales) ? importedData.sales : [];
+                if (importedData.settings) {
+                    importedSettings = { ...settings, ...importedData.settings };
+                }
+            } else {
+                throw new Error('هيكل البيانات غير معروف');
+            }
+            
+            // تنظيف وتجهيز البيانات
+            importedCustomers = cleanImportedCustomers(importedCustomers);
+            importedSales = cleanImportedSales(importedSales);
+            
+            // دمج البيانات الجديدة مع الحالية
+            customers = [...customers, ...importedCustomers];
+            sales = [...sales, ...importedSales];
+            settings = importedSettings;
+            
+            // حفظ البيانات
+            saveData().then(() => {
+                // تحديث الواجهة
+                renderCustomers();
+                renderSales();
+                updateDashboard();
+                updateCharts();
+                updateAIInsights();
+                
+                showNotification(`تم استيراد ${importedCustomers.length} عميل و ${importedSales.length} عملية بيع بنجاح!`, 'success');
+                console.log('✅ استيراد ناجح:', {
+                    customers: importedCustomers.length,
+                    sales: importedSales.length
+                });
+            });
+            
+        } catch (error) {
+            console.error('❌ خطأ في استيراد البيانات:', error);
+            showNotification('خطأ في استيراد الملف: ' + error.message, 'error');
+        }
+    };
+    
+    reader.onerror = function() {
+        showNotification('خطأ في قراءة الملف', 'error');
+    };
+    
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function cleanImportedCustomers(customersArray) {
+    return customersArray.map(customer => {
+        return {
+            id: customer.id || 'c_' + Date.now() + Math.random(),
+            name: customer.name || 'عميل بدون اسم',
+            phone: customer.phone || '0000000000',
+            email: customer.email || '',
+            status: customer.status || 'active',
+            notes: customer.notes || '',
+            createdAt: customer.createdAt || new Date().toISOString()
+        };
+    }).filter(customer => customer.name && customer.phone);
+}
+
+function cleanImportedSales(salesArray) {
+    return salesArray.map(sale => {
+        return {
+            id: sale.id || 's_' + Date.now() + Math.random(),
+            customerId: sale.customerId || sale.customer_id || '',
+            amount: parseFloat(sale.amount) || 0,
+            date: sale.date || sale.sale_date || new Date().toISOString().split('T')[0],
+            description: sale.description || '',
+            createdAt: sale.createdAt || new Date().toISOString()
+        };
+    }).filter(sale => sale.customerId && sale.amount > 0);
+}
+
+function exportToExcel() {
+    showNotification('ميزة التصدير إلى Excel قيد التطوير', 'warning');
+}
+
+function exportToCSV() {
+    showNotification('ميزة التصدير إلى CSV قيد التطوير', 'warning');
+}
+
+function importFromExcel(event) {
+    showNotification('ميزة الاستيراد من Excel قيد التطوير', 'warning');
+    event.target.value = '';
+}
+
+function importFromCSV(event) {
+    showNotification('ميزة الاستيراد من CSV قيد التطوير', 'warning');
+    event.target.value = '';
+}
+
+function clearAllData() {
+    if (!confirm('⚠️ هل أنت متأكد من مسح جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء!')) {
+        return;
+    }
+    
+    customers = [];
+    sales = [];
+    settings = { defaultMessage: 'مرحباً {name}، شكراً لاختيارك DataBuddy!' };
+    
+    saveData().then(() => {
+        renderCustomers();
+        renderSales();
+        updateDashboard();
+        updateCharts();
+        updateAIInsights();
+        showNotification('تم مسح جميع البيانات بنجاح', 'success');
+    });
+}
+
+function saveDefaultMessage() {
+    const message = document.getElementById('defaultMessage').value;
+    settings.defaultMessage = message;
+    saveData();
+    showNotification('تم حفظ قالب الرسالة بنجاح!', 'success');
+}
+
 // ============ التكامل مع API ============
 
 async function saveCustomer(e) {
@@ -595,3 +805,13 @@ window.sendWhatsApp = sendWhatsApp;
 window.showNotification = showNotification;
 window.addMessageToChat = addMessageToChat;
 window.sendFreeMessage = sendFreeMessage;
+window.openExportModal = openExportModal;
+window.openImportModal = openImportModal;
+window.exportData = exportData;
+window.importData = importData;
+window.exportToExcel = exportToExcel;
+window.exportToCSV = exportToCSV;
+window.importFromExcel = importFromExcel;
+window.importFromCSV = importFromCSV;
+window.clearAllData = clearAllData;
+window.saveDefaultMessage = saveDefaultMessage;
