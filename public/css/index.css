@@ -1118,3 +1118,307 @@ body::before {
             letter-spacing: 1.5px !important;
             font-weight: 700 !important;
         }
+/* أنماط خاصة بصفحة حسابي وزر المستخدم */
+.user-menu-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: var(--glow);
+}
+
+.user-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: linear-gradient(135deg, var(--dark-700) 0%, var(--dark-600) 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 15px;
+    min-width: 200px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    display: none;
+    animation: slideDown 0.3s ease;
+}
+
+.user-dropdown.active {
+    display: block;
+}
+
+.user-info {
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+}
+
+.user-name {
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+
+.user-email {
+    font-size: 12px;
+    color: #666;
+}
+
+.user-menu-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-menu-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #333;
+}
+
+.user-menu-item:hover {
+    background: rgba(91, 46, 222, 0.1);
+    color: var(--primary);
+}
+
+/* زر حسابي عائم */
+.floating-profile-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: var(--glow), var(--shadow-lg);
+    z-index: 1000;
+    transition: all 0.3s ease;
+    border: 2px solid white;
+}
+
+.floating-profile-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(91, 46, 222, 0.8);
+}
+
+.floating-profile-btn:hover .profile-tooltip {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.profile-tooltip {
+    position: absolute;
+    right: 70px;
+    background: var(--dark-700);
+    color: var(--primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+    border: 1px solid var(--primary);
+}
+
+/* بطاقة معلومات المستخدم في الداشبورد */
+.user-info-card {
+    background: linear-gradient(135deg, var(--dark-700) 0%, var(--dark-600) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.user-info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+}
+
+.user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.user-info-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.user-info-details h3 {
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+
+.user-info-details p {
+    color: #666;
+    font-size: 14px;
+}
+
+.user-info-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.user-stat {
+    text-align: center;
+    padding: 10px;
+    background: rgba(91, 46, 222, 0.1);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.user-stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+
+.user-stat-label {
+    font-size: 12px;
+    color: #666;
+}
+
+/* تصميم متجاوب */
+@media (max-width: 768px) {
+    .floating-profile-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        top: 10px;
+        left: 10px;
+    }
+    
+    .profile-tooltip {
+        display: none;
+    }
+    
+    .user-info-card {
+        padding: 15px;
+    }
+    
+    .user-info-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .user-info-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .user-menu-container {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-info-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .nav-tabs {
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
+    
+    .nav-tabs .tab-btn {
+        white-space: nowrap;
+        font-size: 14px;
+        padding: 10px 15px;
+    }
+}
+
+/* أنيميشن للزر العائم */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.floating-profile-btn.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* تأثيرات خاصة للوضع الليلي */
+@media (prefers-color-scheme: dark) {
+    .user-menu-item {
+        color: #f0f0f0;
+    }
+    
+    .user-menu-item:hover {
+        background: rgba(91, 46, 222, 0.2);
+    }
+}
+
+/* تحسينات للشريط العلوي */
+.nav-tabs {
+    display: flex;
+    gap: 10px;
+    background: rgba(243, 242, 248, 0.733);
+    padding: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    flex-wrap: wrap;
+}
+
+/* تأكد أن زر حسابي يظهر بشكل جميع */
+.nav-tabs .tab-btn:last-child {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: white;
+    border: none;
+}
+
+.nav-tabs .tab-btn:last-child:hover {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+    transform: translateY(-2px);
+}
