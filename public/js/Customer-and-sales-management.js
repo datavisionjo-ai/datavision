@@ -1,52 +1,66 @@
+// Customer-and-sales-management.js - معدل كامل
 function renderCustomers() {
     const container = document.getElementById('customersList');
+    if (!container) {
+        console.error('❌ عنصر customersList غير موجود');
+        return;
+    }
+    
     container.innerHTML = '';
 
-    if (customers.length === 0) {
+    if (!customers || customers.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 40px;">لا يوجد عملاء حتى الآن. قم بإضافة عميل جديد!</p>';
         return;
     }
 
     customers.forEach(customer => {
+        if (!customer) return;
+        
         const purchases = getCustomerPurchases(customer.id);
         
         const card = document.createElement('div');
-        card.className = `customer-card ${customer.status}`;
+        card.className = `customer-card ${customer.status || 'active'}`;
         card.innerHTML = `
             <div class="customer-header">
                 <div>
-                    <div class="customer-name">${customer.name}</div>
+                    <div class="customer-name">${customer.name || 'عميل بدون اسم'}</div>
                     <div class="customer-info">
-                        <div>📱 ${customer.phone}</div>
+                        <div>📱 ${customer.phone || 'لا يوجد رقم'}</div>
                         ${customer.email ? `<div>📧 ${customer.email}</div>` : ''}
                         ${customer.notes ? `<div>📝 ${customer.notes}</div>` : ''}
                     </div>
                 </div>
-                <span class="customer-status status-${customer.status}">
-                    ${customer.status === 'active' ? '✓ نشط' : '⚠ غير نشط'}
+                <span class="customer-status status-${customer.status || 'active'}">
+                    ${(customer.status === 'active') ? '✓ نشط' : '⚠ غير نشط'}
                 </span>
             </div>
             
             ${purchases.count > 0 ? `
-        <div style="margin: 15px 0; padding: 12px; background: linear-gradient(135deg, var(--dark-700) 0%, var(--dark-600) 100%); border-radius: 8px; border-right: 3px solid var(--primary);">
+            <div style="margin: 15px 0; padding: 12px; background: linear-gradient(135deg, var(--dark-700) 0%, var(--dark-600) 100%); border-radius: 8px; border-right: 3px solid var(--primary);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <strong style="color: var(--primary);">💰 سجل المشتريات (${purchases.count})</strong>
                     <strong style="color: var(--success);">${purchases.total.toFixed(2)} دينار</strong>
                 </div>
                 <div id="purchases-${customer.id}" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                    ${purchases.sales.map(sale => `
+                    ${purchases.sales.map(sale => {
+                        const saleDate = sale.date || sale.sale_date;
+                        const saleAmount = parseFloat(sale.amount || 0);
+                        const saleDesc = sale.description || '';
+                        
+                        return `
                         <div style="padding: 8px; margin: 5px 0; background: var(--dark-600); border-radius: 6px; border: 1px solid var(--border);">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-size: 14px; color: rgba(255,255,255,0.6);">
-                                        📅 ${new Date(sale.date).toLocaleDateString('ar-JO', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                        📅 ${saleDate ? new Date(saleDate).toLocaleDateString('ar-JO', { year: 'numeric', month: 'short', day: 'numeric' }) : 'تاريخ غير محدد'}
                                     </div>
-                                    ${sale.description ? `<div style="font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 3px;">${sale.description}</div>` : ''}
+                                    ${saleDesc ? `<div style="font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 3px;">${saleDesc}</div>` : ''}
                                 </div>
-                                <div style="font-weight: bold; color: var(--success);">${parseFloat(sale.amount).toFixed(2)} دينار</div>
+                                <div style="font-weight: bold; color: var(--success);">${saleAmount.toFixed(2)} دينار</div>
                             </div>
                         </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
                 <button onclick="togglePurchases('${customer.id}')" style="margin-top: 8px; padding: 6px 12px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: var(--dark); border: none; border-radius: 6px; cursor: pointer; font-size: 13px; width: 100%; font-weight: 600; transition: all 0.3s ease;">
                     <span id="toggle-text-${customer.id}">عرض المشتريات ▼</span>
@@ -188,17 +202,24 @@ function saveSale(e) {
 
 function renderSales() {
     const container = document.getElementById('salesList');
+    if (!container) {
+        console.error('❌ عنصر salesList غير موجود');
+        return;
+    }
+    
     container.innerHTML = '';
 
-    if (sales.length === 0) {
+    if (!sales || sales.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 40px;">لا توجد مبيعات حتى الآن.</p>';
         return;
     }
 
-    const sortedSales = [...sales].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const sortedSales = [...sales].sort((a, b) => new Date(b.date || b.sale_date) - new Date(a.date || a.sale_date));
 
     sortedSales.forEach(sale => {
-        const customer = customers.find(c => c.id === sale.customerId);
+        if (!sale) return;
+        
+        const customer = customers.find(c => c.id === (sale.customerId || sale.customer_id));
         const item = document.createElement('div');
         item.className = 'sale-item';
         item.innerHTML = `
@@ -207,13 +228,13 @@ function renderSales() {
                     <div style="font-weight: bold; color: var(--dark); margin-bottom: 5px;">
                         ${customer ? customer.name : 'عميل محذوف'}
                     </div>
-                    <div class="sale-date">${new Date(sale.date).toLocaleDateString('ar-JO', { 
+                    <div class="sale-date">${new Date(sale.date || sale.sale_date).toLocaleDateString('ar-JO', { 
                         year: 'numeric', 
                         month: 'long', 
                         day: 'numeric' 
                     })}</div>
                 </div>
-                <div class="sale-amount">${parseFloat(sale.amount).toFixed(2)} دينار</div>
+                <div class="sale-amount">${parseFloat(sale.amount || 0).toFixed(2)} دينار</div>
             </div>
             ${sale.description ? `<div style="color: #6b7280; margin-top: 8px;">${sale.description}</div>` : ''}
         `;
@@ -221,9 +242,31 @@ function renderSales() {
     });
 }
 
-// إضافة الرسائل إلى نافذة الدردشة
+function getCustomerPurchases(customerId) {
+    if (!sales || !Array.isArray(sales)) {
+        return { sales: [], count: 0, total: 0 };
+    }
+    
+    const customerSales = sales.filter(s => {
+        if (!s) return false;
+        return s.customer_id === customerId || s.customerId === customerId;
+    });
+    
+    const totalAmount = customerSales.reduce((sum, sale) => {
+        return sum + parseFloat(sale.amount || 0);
+    }, 0);
+    
+    return {
+        sales: customerSales,
+        count: customerSales.length,
+        total: totalAmount
+    };
+}
+
 function addMessageToChat(message, sender) {
     const chatContainer = document.getElementById('chatContainer');
+    if (!chatContainer) return;
+    
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('chat-message');
     messageDiv.classList.add(sender === 'ai' ? 'ai-message' : 'user-message');
@@ -237,12 +280,25 @@ function addMessageToChat(message, sender) {
     `;
     
     chatContainer.appendChild(messageDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight; // التمرير لأسفل بعد إضافة رسالة جديدة
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// التعامل مع الضغط على مفتاح Enter
 function handleKeyPress(event) {
     if (event.key === 'Enter') {
         sendFreeMessage();
     }
 }
+
+// جعل الدوال متاحة globally
+window.renderCustomers = renderCustomers;
+window.togglePurchases = togglePurchases;
+window.filterCustomers = filterCustomers;
+window.openAddCustomerModal = openAddCustomerModal;
+window.editCustomer = editCustomer;
+window.saveCustomer = saveCustomer;
+window.deleteCustomer = deleteCustomer;
+window.openSaleModal = openSaleModal;
+window.saveSale = saveSale;
+window.renderSales = renderSales;
+window.addMessageToChat = addMessageToChat;
+window.handleKeyPress = handleKeyPress;
