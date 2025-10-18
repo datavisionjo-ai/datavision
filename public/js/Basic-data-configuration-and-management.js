@@ -16,12 +16,7 @@ function init() {
     updateDashboard();
     renderCustomers();
     renderSales();
-    
-    // تأخير تهيئة المخططات حتى تتوفر البيانات
-    setTimeout(() => {
-        initCharts();
-        updateCharts();
-    }, 500);
+    initCharts();
     
     if (document.getElementById('defaultMessage')) {
         document.getElementById('defaultMessage').value = settings.defaultMessage;
@@ -182,7 +177,7 @@ function updateDashboard() {
     }
 }
 
-// ============ النظام البياني - معدل ============
+// ============ النظام البياني ============
 
 function initCharts() {
     const statusCtx = document.getElementById('statusChart');
@@ -190,54 +185,30 @@ function initCharts() {
     
     if (!statusCtx || !salesCtx) {
         console.log('⏳ Charts containers not ready yet');
-        setTimeout(initCharts, 100);
         return;
     }
 
-    // تدمير المخططات القديمة إذا كانت موجودة
-    if (statusChart) statusChart.destroy();
-    if (salesChart) salesChart.destroy();
-
-    // مخطط توزيع العملاء
     statusChart = new Chart(statusCtx.getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: ['عملاء نشطين', 'عملاء غير نشطين'],
+            labels: ['نشط', 'غير نشط'],
             datasets: [{
                 data: [0, 0],
-                backgroundColor: ['#10b981', '#f59e0b'],
-                borderWidth: 2,
-                borderColor: '#ffffff'
+                backgroundColor: ['#00087aff', '#ff0000ff'],
+                borderWidth: 0
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
-                    position: 'bottom',
-                    rtl: true,
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20,
-                        font: {
-                            family: 'Arial, sans-serif',
-                            size: 12
-                        }
-                    }
-                },
-                tooltip: {
-                    rtl: true,
-                    bodyFont: {
-                        family: 'Arial, sans-serif'
-                    }
+                    position: 'bottom'
                 }
-            },
-            cutout: '60%'
+            }
         }
     });
 
-    // مخطط المبيعات آخر 7 أيام
     salesChart = new Chart(salesCtx.getContext('2d'), {
         type: 'line',
         data: {
@@ -245,56 +216,23 @@ function initCharts() {
             datasets: [{
                 label: 'المبيعات (دينار)',
                 data: [],
-                borderColor: '#8b5cf6',
-                backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                borderWidth: 3,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
                 tension: 0.4,
-                fill: true,
-                pointBackgroundColor: '#8b5cf6',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 5,
-                pointHoverRadius: 7
+                fill: true
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
                     display: false
-                },
-                tooltip: {
-                    rtl: true,
-                    bodyFont: {
-                        family: 'Arial, sans-serif'
-                    }
                 }
             },
             scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        font: {
-                            family: 'Arial, sans-serif'
-                        }
-                    }
-                },
                 y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0,0,0,0.1)'
-                    },
-                    ticks: {
-                        font: {
-                            family: 'Arial, sans-serif'
-                        },
-                        callback: function(value) {
-                            return value + ' د.أ';
-                        }
-                    }
+                    beginAtZero: true
                 }
             }
         }
@@ -304,59 +242,25 @@ function initCharts() {
 }
 
 function updateCharts() {
-    if (!statusChart || !salesChart) {
-        console.log('⚠️ المخططات غير مهيئة بعد');
-        return;
-    }
+    if (!statusChart || !salesChart) return;
 
-    try {
-        // تحديث مخطط توزيع العملاء
-        const activeCustomers = customers.filter(c => c.status === 'active').length;
-        const inactiveCustomers = customers.length - activeCustomers;
-        
-        statusChart.data.datasets[0].data = [activeCustomers, inactiveCustomers];
-        statusChart.update();
+    const active = customers.filter(c => c.status === 'active').length;
+    const inactive = customers.length - active;
+    
+    statusChart.data.datasets[0].data = [active, inactive];
+    statusChart.update();
 
-        // تحديث مخطط المبيعات آخر 7 أيام
-        const last7Days = getLast7Days();
-        const salesByDay = calculateSalesByDay(last7Days);
-        
-        salesChart.data.labels = last7Days.map(date => 
-            formatDateForChart(date)
-        );
-        salesChart.data.datasets[0].data = last7Days.map(date => salesByDay[date]);
-        salesChart.update();
-
-        console.log('✅ تم تحديث المخططات:', {
-            active: activeCustomers,
-            inactive: inactiveCustomers,
-            salesData: salesByDay
-        });
-
-    } catch (error) {
-        console.error('❌ خطأ في تحديث المخططات:', error);
-    }
-}
-
-function getLast7Days() {
-    const days = [];
+    const last7Days = [];
+    const salesByDay = {};
+    
     for (let i = 6; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
-        days.push(date.toISOString().split('T')[0]);
+        const dateStr = date.toISOString().split('T')[0];
+        last7Days.push(dateStr);
+        salesByDay[dateStr] = 0;
     }
-    return days;
-}
 
-function calculateSalesByDay(daysArray) {
-    const salesByDay = {};
-    
-    // تهيئة جميع الأيام بصفر
-    daysArray.forEach(day => {
-        salesByDay[day] = 0;
-    });
-
-    // حساب المبيعات لكل يوم
     sales.forEach(sale => {
         const saleDate = sale.sale_date || sale.date;
         if (salesByDay.hasOwnProperty(saleDate)) {
@@ -364,16 +268,12 @@ function calculateSalesByDay(daysArray) {
         }
     });
 
-    return salesByDay;
-}
-
-function formatDateForChart(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ar-JO', { 
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short'
+    salesChart.data.labels = last7Days.map(d => {
+        const date = new Date(d);
+        return date.toLocaleDateString('ar-JO', { month: 'short', day: 'numeric' });
     });
+    salesChart.data.datasets[0].data = last7Days.map(d => salesByDay[d]);
+    salesChart.update();
 }
 
 // ============ دوال المساعدة ============
@@ -566,7 +466,7 @@ async function analyzeBusinessData() {
                 const saleDate = new Date(s.sale_date || s.date);
                 return saleDate >= last30Days;
             });
-            const recentSalesTotal = recentSales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0;
+            const recentSalesTotal = recentSales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
             
             let analysis = `📊 **تحليل متقدم للأعمال**\n\n`;
             analysis += `👥 **العملاء:** ${totalCustomers} عميل (${activeCustomers} نشط)\n`;
