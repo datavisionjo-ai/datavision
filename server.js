@@ -240,7 +240,205 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// إنشاء حساب جديد
+// 🔐 إضافة هذه المسارات إلى server.js
+
+// 👤 ملف المستخدم الشخصي
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        
+        const userResult = await pool.query(
+            'SELECT id, name, email, role, created_at, last_login FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'المستخدم غير موجود' });
+        }
+
+        res.json({
+            success: true,
+            user: userResult.rows[0]
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: 'خطأ في جلب بيانات المستخدم' });
+    }
+});
+
+app.put('/api/user/profile', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { name, email, currentPassword, newPassword } = req.body;
+
+        // التحقق من كلمة المرور إذا كانت هناك محاولة لتغييرها
+        if (newPassword) {
+            const userCheck = await pool.query(
+                'SELECT password_hash FROM users WHERE id = $1',
+                [userId]
+            );
+
+            const validPassword = await bcrypt.compare(currentPassword, userCheck.rows[0].password_hash);
+            if (!validPassword) {
+                return res.status(401).json({ error: 'كلمة المرور الحالية غير صحيحة' });
+            }
+
+            // تشفير كلمة المرور الجديدة
+            const saltRounds = 10;
+            const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+            
+            await pool.query(
+                'UPDATE users SET password_hash = $1 WHERE id = $2',
+                [newPasswordHash, userId]
+            );
+        }
+
+        // تحديث البيانات الأساسية
+        await pool.query(
+            'UPDATE users SET name = $1, email = $2 WHERE id = $3',
+            [name, email, userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'تم تحديث الملف الشخصي بنجاح'
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: 'خطأ في تحديث الملف الشخصي' });
+    }
+});
+
+// 👥 إدارة الموظفين
+app.get('/api/users/employees', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        
+        // التحقق من الصلاحيات
+        const userCheck = await pool.query(
+            'SELECT role FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (!['admin', 'manager'].includes(userCheck.rows[0].role)) {
+            return res.status(403).json({ error: 'ليس لديك صلاحية لعرض الموظفين' });
+        }
+
+        const employeesResult = await pool.query(
+            `SELECT id, name, email, role, position, status, created_at, last_login 
+             FROM users 
+             WHERE created_by = $1 OR role IN ('employee', 'viewer')
+             ORDER BY created_at DESC`,
+            [userId]
+        );
+
+        res.json({
+            success: true,
+            employees: employeesResult.rows
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: 'خطأ في جلب بيانات الموظفين' });
+    }
+});
+
+app.post('/api/users/employees', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { name, email, password, position, role, permissions } = req.body;
+
+        // التحقق من الصلاحيات
+        const userCheck = await pool.query(
+            'SELECT role FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (!['admin', 'manager'].includes(userCheck.rows[0].role)) {
+            return res.status(403).json({ error: 'ليس لديك صلاحية لإضافة موظفين' });
+        }
+
+        // التحقق من وجود البريد الإلكتروني
+        const emailCheck = await pool.query(
+            'SELECT id FROM users WHERE email = $1',
+            [email]
+        );
+
+        if (emailCheck.rows.length > 0) {
+            return res.status(400).json({ error: 'البريد الإلكتروني مسجل مسبقاً' });
+        }
+
+        // تشفير كلمة المرور
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+
+        // إضافة الموظف
+        const result = await pool.query(
+            `INSERT INTO users (name, email, password_hash, role, position, created_by) 
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING id, name, email, role, position, created_at`,
+            [name, email, passwordHash, role, position, userId]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'تم إضافة الموظف بنجاح',
+            employee: result.rows[0]
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: 'خطأ في إضافة الموظف' });
+    }
+});
+
+// 📊 تصدير بيانات المستخدم
+app.get('/api/user/export-data', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const customersResult = await pool.query(
+            'SELECT * FROM customers WHERE user_id = $1',
+            [userId]
+        );
+
+        const salesResult = await pool.query(
+            'SELECT * FROM sales WHERE user_id = $1',
+            [userId]
+        );
+
+        res.json({
+            success: true,
+            data: {
+                customers: customersResult.rows,
+                sales: salesResult.rows,
+                exportDate: new Date().toISOString(),
+                user: getCurrentUser()
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: 'خطأ في تصدير البيانات' });
+    }
+});
+
+// 🗑️ حذف الحساب
+app.delete('/api/user/account', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // حذف جميع بيانات المستخدم
+        await pool.query('DELETE FROM sales WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM customers WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+
+        res.json({
+            success: true,
+            message: 'تم حذف الحساب وجميع البيانات المرتبطة به بنجاح'
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: 'خطأ في حذف الحساب' });
+    }
+});
 app.post('/api/auth/register', async (req, res) => {
     console.log('📝 محاولة تسجيل جديد:', req.body);
     
