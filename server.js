@@ -1,4 +1,4 @@
-// server.js - Data Vision CRM - نموذج ناجح
+// server.js - الإصدار المصلح
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -19,14 +19,32 @@ const io = socketIo(server, {
 });
 const PORT = process.env.PORT || 10000;
 
-// 🔗 رابط الداتابيس - ضع رابطك من Neon هنا
+// 🔗 رابط الداتابيس
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'psql postgresql://neondb_owner:npg_d6upvPVo4wAQ@ep-raspy-lab-agajrhmu-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
+    connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
 // 🔑 مفتاح التوقيع
 const JWT_SECRET = process.env.JWT_SECRET || 'datavision-secret-key-2024';
+
+// 🔐 Middleware للتحقق من التوكن - يجب تعريفه قبل الاستخدام
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'رمز الدخول مطلوب' });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: 'رمز الدخول غير صالح' });
+        }
+        req.user = user;
+        next();
+    });
+};
 
 // 🔧 دالة تهيئة قاعدة البيانات
 async function initializeDatabase() {
@@ -40,6 +58,12 @@ async function initializeDatabase() {
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
+                role VARCHAR(50) DEFAULT 'user',
+                position VARCHAR(100),
+                status VARCHAR(20) DEFAULT 'active',
+                created_by INTEGER REFERENCES users(id),
+                last_login TIMESTAMP,
+                permissions JSONB,
                 created_at TIMESTAMP DEFAULT NOW()
             )
         `);
@@ -71,12 +95,25 @@ async function initializeDatabase() {
             )
         `);
 
+        // إنشاء جدول سجل النشاطات
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS user_activities (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                type VARCHAR(50) NOT NULL,
+                details TEXT,
+                timestamp TIMESTAMP DEFAULT NOW()
+            )
+        `);
+
         // إنشاء indexes للأداء
         await client.query(`
             CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+            CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
             CREATE INDEX IF NOT EXISTS idx_customers_user_id ON customers(user_id);
             CREATE INDEX IF NOT EXISTS idx_sales_user_id ON sales(user_id);
             CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
+            CREATE INDEX IF NOT EXISTS idx_user_activities_user_id ON user_activities(user_id);
         `);
 
         client.release();
@@ -89,11 +126,6 @@ async function initializeDatabase() {
 // 🔥 تشغيل التهيئة
 initializeDatabase();
 
-// ⚙️ Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
 // 👥 مستخدمين متصلين
 const onlineUsers = new Map();
 
@@ -101,24 +133,20 @@ const onlineUsers = new Map();
 io.on('connection', (socket) => {
     console.log('🔌 مستخدم متصل:', socket.id);
 
-    // تسجيل المستخدم كمتصل
     socket.on('user_online', (userId) => {
         onlineUsers.set(userId.toString(), socket.id);
         console.log(`👤 المستخدم ${userId} متصل الآن`);
     });
 
-    // انضمام للدردشة
     socket.on('join_dashboard', (userId) => {
         socket.join(`user_${userId}`);
         console.log(`📊 المستخدم ${userId} انضم للوحة التحكم`);
     });
 
-    // تحديث بيانات في الوقت الحقيقي
     socket.on('data_updated', (data) => {
         socket.broadcast.emit('refresh_data', data);
     });
 
-    // قطع الاتصال
     socket.on('disconnect', () => {
         console.log('🔌 مستخدم منقطع:', socket.id);
         for (let [userId, socketId] of onlineUsers.entries()) {
@@ -129,6 +157,11 @@ io.on('connection', (socket) => {
         }
     });
 });
+
+// ⚙️ Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // 📝 تسجيل الطلبات
 app.use((req, res, next) => {
@@ -209,6 +242,12 @@ app.post('/api/auth/login', async (req, res) => {
 
         console.log('✅ تسجيل دخول ناجح:', user.email);
 
+        // تحديث وقت آخر دخول
+        await pool.query(
+            'UPDATE users SET last_login = NOW() WHERE id = $1',
+            [user.id]
+        );
+
         // إنشاء توكن
         const token = jwt.sign(
             { userId: user.id, email: user.email },
@@ -221,7 +260,10 @@ app.post('/api/auth/login', async (req, res) => {
             id: user.id,
             name: user.name,
             email: user.email,
-            created_at: user.created_at
+            role: user.role,
+            position: user.position,
+            created_at: user.created_at,
+            last_login: user.last_login
         };
 
         res.json({
@@ -240,7 +282,120 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// 🔐 إضافة هذه المسارات إلى server.js
+// إنشاء حساب جديد
+app.post('/api/auth/register', async (req, res) => {
+    console.log('📝 محاولة تسجيل جديد:', req.body);
+    
+    try {
+        const { name, email, password } = req.body;
+        
+        if (!name || !email || !password) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'جميع الحقول مطلوبة' 
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' 
+            });
+        }
+
+        // التحقق من وجود المستخدم
+        const userCheck = await pool.query(
+            'SELECT id FROM users WHERE email = $1', 
+            [email]
+        );
+
+        if (userCheck.rows.length > 0) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'البريد الإلكتروني مسجل مسبقاً' 
+            });
+        }
+
+        // تشفير كلمة المرور
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+
+        // حفظ المستخدم
+        const result = await pool.query(
+            `INSERT INTO users (name, email, password_hash, role) 
+             VALUES ($1, $2, $3, 'user') 
+             RETURNING id, name, email, role, created_at`,
+            [name, email, passwordHash]
+        );
+
+        console.log('✅ مستخدم جديد مسجل:', result.rows[0].email);
+
+        // إنشاء توكن
+        const token = jwt.sign(
+            { userId: result.rows[0].id, email: result.rows[0].email },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'تم إنشاء الحساب بنجاح!',
+            user: result.rows[0],
+            token
+        });
+
+    } catch (error) {
+        console.error('❌ خطأ في التسجيل:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'خطأ في السيرفر: ' + error.message 
+        });
+    }
+});
+
+// 📊 إحصائيات المستخدم
+app.get('/api/user/stats', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const customersCount = await pool.query(
+            'SELECT COUNT(*) FROM customers WHERE user_id = $1',
+            [userId]
+        );
+
+        const salesCount = await pool.query(
+            'SELECT COUNT(*) FROM sales WHERE user_id = $1',
+            [userId]
+        );
+
+        const totalSales = await pool.query(
+            'SELECT COALESCE(SUM(amount), 0) as total FROM sales WHERE user_id = $1',
+            [userId]
+        );
+
+        const activeCustomers = await pool.query(
+            'SELECT COUNT(*) FROM customers WHERE user_id = $1 AND status = $2',
+            [userId, 'active']
+        );
+
+        res.json({
+            success: true,
+            stats: {
+                totalCustomers: parseInt(customersCount.rows[0].count),
+                totalSales: parseInt(salesCount.rows[0].count),
+                salesAmount: parseFloat(totalSales.rows[0].total),
+                activeCustomers: parseInt(activeCustomers.rows[0].count)
+            }
+        });
+
+    } catch (error) {
+        console.error('Stats error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'خطأ في جلب الإحصائيات' 
+        });
+    }
+});
 
 // 👤 ملف المستخدم الشخصي
 app.get('/api/user/profile', authenticateToken, async (req, res) => {
@@ -248,7 +403,7 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
         const userId = req.user.userId;
         
         const userResult = await pool.query(
-            'SELECT id, name, email, role, created_at, last_login FROM users WHERE id = $1',
+            'SELECT id, name, email, role, position, created_at, last_login FROM users WHERE id = $1',
             [userId]
         );
 
@@ -405,13 +560,18 @@ app.get('/api/user/export-data', authenticateToken, async (req, res) => {
             [userId]
         );
 
+        const userResult = await pool.query(
+            'SELECT id, name, email, role FROM users WHERE id = $1',
+            [userId]
+        );
+
         res.json({
             success: true,
             data: {
                 customers: customersResult.rows,
                 sales: salesResult.rows,
-                exportDate: new Date().toISOString(),
-                user: getCurrentUser()
+                user: userResult.rows[0],
+                exportDate: new Date().toISOString()
             }
         });
 
@@ -420,160 +580,7 @@ app.get('/api/user/export-data', authenticateToken, async (req, res) => {
     }
 });
 
-// 🗑️ حذف الحساب
-app.delete('/api/user/account', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.userId;
-
-        // حذف جميع بيانات المستخدم
-        await pool.query('DELETE FROM sales WHERE user_id = $1', [userId]);
-        await pool.query('DELETE FROM customers WHERE user_id = $1', [userId]);
-        await pool.query('DELETE FROM users WHERE id = $1', [userId]);
-
-        res.json({
-            success: true,
-            message: 'تم حذف الحساب وجميع البيانات المرتبطة به بنجاح'
-        });
-
-    } catch (error) {
-        res.status(500).json({ error: 'خطأ في حذف الحساب' });
-    }
-});
-app.post('/api/auth/register', async (req, res) => {
-    console.log('📝 محاولة تسجيل جديد:', req.body);
-    
-    try {
-        const { name, email, password } = req.body;
-        
-        if (!name || !email || !password) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'جميع الحقول مطلوبة' 
-            });
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' 
-            });
-        }
-
-        // التحقق من وجود المستخدم
-        const userCheck = await pool.query(
-            'SELECT id FROM users WHERE email = $1', 
-            [email]
-        );
-
-        if (userCheck.rows.length > 0) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'البريد الإلكتروني مسجل مسبقاً' 
-            });
-        }
-
-        // تشفير كلمة المرور
-        const saltRounds = 10;
-        const passwordHash = await bcrypt.hash(password, saltRounds);
-
-        // حفظ المستخدم
-        const result = await pool.query(
-            `INSERT INTO users (name, email, password_hash) 
-             VALUES ($1, $2, $3) 
-             RETURNING id, name, email, created_at`,
-            [name, email, passwordHash]
-        );
-
-        console.log('✅ مستخدم جديد مسجل:', result.rows[0].email);
-
-        // إنشاء توكن
-        const token = jwt.sign(
-            { userId: result.rows[0].id, email: result.rows[0].email },
-            JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.status(201).json({
-            success: true,
-            message: 'تم إنشاء الحساب بنجاح!',
-            user: result.rows[0],
-            token
-        });
-
-    } catch (error) {
-        console.error('❌ خطأ في التسجيل:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في السيرفر: ' + error.message 
-        });
-    }
-});
-
-// Middleware للتحقق من التوكن
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ error: 'رمز الدخول مطلوب' });
-    }
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: 'رمز الدخول غير صالح' });
-        }
-        req.user = user;
-        next();
-    });
-};
-
-// 📊 إحصائيات المستخدم
-app.get('/api/user/stats', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.userId;
-
-        const customersCount = await pool.query(
-            'SELECT COUNT(*) FROM customers WHERE user_id = $1',
-            [userId]
-        );
-
-        const salesCount = await pool.query(
-            'SELECT COUNT(*) FROM sales WHERE user_id = $1',
-            [userId]
-        );
-
-        const totalSales = await pool.query(
-            'SELECT COALESCE(SUM(amount), 0) as total FROM sales WHERE user_id = $1',
-            [userId]
-        );
-
-        const activeCustomers = await pool.query(
-            'SELECT COUNT(*) FROM customers WHERE user_id = $1 AND status = $2',
-            [userId, 'active']
-        );
-
-        res.json({
-            success: true,
-            stats: {
-                totalCustomers: parseInt(customersCount.rows[0].count),
-                totalSales: parseInt(salesCount.rows[0].count),
-                salesAmount: parseFloat(totalSales.rows[0].total),
-                activeCustomers: parseInt(activeCustomers.rows[0].count)
-            }
-        });
-
-    } catch (error) {
-        console.error('Stats error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في جلب الإحصائيات' 
-        });
-    }
-});
-
 // 👥 إدارة العملاء
-
-// جلب عملاء المستخدم
 app.get('/api/customers', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -597,24 +604,17 @@ app.get('/api/customers', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Get customers error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في جلب العملاء' 
-        });
+        res.status(500).json({ error: 'خطأ في جلب العملاء' });
     }
 });
 
-// إضافة عميل جديد
 app.post('/api/customers', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
         const { name, phone, email, status, notes } = req.body;
 
         if (!name || !phone) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'الاسم ورقم الهاتف مطلوبان' 
-            });
+            return res.status(400).json({ error: 'الاسم ورقم الهاتف مطلوبان' });
         }
 
         const result = await pool.query(
@@ -624,9 +624,6 @@ app.post('/api/customers', authenticateToken, async (req, res) => {
             [userId, name, phone, email, status, notes]
         );
 
-        // إشعار في الوقت الحقيقي
-        io.emit('customer_added', { userId, customer: result.rows[0] });
-
         res.status(201).json({
             success: true,
             message: 'تم إضافة العميل بنجاح',
@@ -635,94 +632,11 @@ app.post('/api/customers', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Add customer error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في إضافة العميل' 
-        });
-    }
-});
-
-// تحديث عميل
-app.put('/api/customers/:id', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        const customerId = req.params.id;
-        const { name, phone, email, status, notes } = req.body;
-
-        // التحقق من ملكية العميل
-        const customerCheck = await pool.query(
-            'SELECT id FROM customers WHERE id = $1 AND user_id = $2',
-            [customerId, userId]
-        );
-
-        if (customerCheck.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'العميل غير موجود' 
-            });
-        }
-
-        const result = await pool.query(
-            `UPDATE customers 
-             SET name = $1, phone = $2, email = $3, status = $4, notes = $5 
-             WHERE id = $6 AND user_id = $7 
-             RETURNING *`,
-            [name, phone, email, status, notes, customerId, userId]
-        );
-
-        res.json({
-            success: true,
-            message: 'تم تحديث العميل بنجاح',
-            customer: result.rows[0]
-        });
-
-    } catch (error) {
-        console.error('Update customer error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في تحديث العميل' 
-        });
-    }
-});
-
-// حذف عميل
-app.delete('/api/customers/:id', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        const customerId = req.params.id;
-
-        // التحقق من ملكية العميل
-        const customerCheck = await pool.query(
-            'SELECT id FROM customers WHERE id = $1 AND user_id = $2',
-            [customerId, userId]
-        );
-
-        if (customerCheck.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'العميل غير موجود' 
-            });
-        }
-
-        await pool.query('DELETE FROM customers WHERE id = $1 AND user_id = $2', [customerId, userId]);
-
-        res.json({
-            success: true,
-            message: 'تم حذف العميل بنجاح'
-        });
-
-    } catch (error) {
-        console.error('Delete customer error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في حذف العميل' 
-        });
+        res.status(500).json({ error: 'خطأ في إضافة العميل' });
     }
 });
 
 // 💰 إدارة المبيعات
-
-// جلب مبيعات المستخدم
 app.get('/api/sales', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -743,37 +657,17 @@ app.get('/api/sales', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Get sales error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في جلب المبيعات' 
-        });
+        res.status(500).json({ error: 'خطأ في جلب المبيعات' });
     }
 });
 
-// إضافة بيع جديد
 app.post('/api/sales', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
         const { customer_id, amount, sale_date, description } = req.body;
 
         if (!customer_id || !amount || !sale_date) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'العميل والمبلغ والتاريخ مطلوبون' 
-            });
-        }
-
-        // التحقق من ملكية العميل
-        const customerCheck = await pool.query(
-            'SELECT id FROM customers WHERE id = $1 AND user_id = $2',
-            [customer_id, userId]
-        );
-
-        if (customerCheck.rows.length === 0) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'العميل غير موجود' 
-            });
+            return res.status(400).json({ error: 'العميل والمبلغ والتاريخ مطلوبون' });
         }
 
         const result = await pool.query(
@@ -783,9 +677,6 @@ app.post('/api/sales', authenticateToken, async (req, res) => {
             [userId, customer_id, amount, sale_date, description]
         );
 
-        // إشعار في الوقت الحقيقي
-        io.emit('sale_added', { userId, sale: result.rows[0] });
-
         res.status(201).json({
             success: true,
             message: 'تم إضافة البيع بنجاح',
@@ -794,151 +685,7 @@ app.post('/api/sales', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Add sale error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في إضافة البيع' 
-        });
-    }
-});
-
-// 🤖 المساعد الذكي
-app.post('/api/ai/analyze', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        const { message } = req.body;
-
-        // جلب بيانات المستخدم للتحليل
-        const customersCount = await pool.query(
-            'SELECT COUNT(*) FROM customers WHERE user_id = $1',
-            [userId]
-        );
-
-        const salesData = await pool.query(
-            `SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total 
-             FROM sales WHERE user_id = $1`,
-            [userId]
-        );
-
-        const activeCustomers = await pool.query(
-            'SELECT COUNT(*) FROM customers WHERE user_id = $1 AND status = $2',
-            [userId, 'active']
-        );
-
-        const data = {
-            totalCustomers: parseInt(customersCount.rows[0].count),
-            totalSales: parseInt(salesData.rows[0].count),
-            salesAmount: parseFloat(salesData.rows[0].total),
-            activeCustomers: parseInt(activeCustomers.rows[0].count)
-        };
-
-        // تحليل البيانات وإرجاع رد ذكي
-        const analysis = generateAIAnalysis(message, data);
-        
-        res.json({
-            success: true,
-            response: analysis
-        });
-
-    } catch (error) {
-        console.error('AI analysis error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في التحليل' 
-        });
-    }
-});
-
-// دالة التحليل الذكي
-function generateAIAnalysis(message, data) {
-    const lowerMsg = message.toLowerCase();
-
-    if (lowerMsg.includes('عملاء') || lowerMsg.includes('زبائن')) {
-        const inactiveCustomers = data.totalCustomers - data.activeCustomers;
-        const activeRate = data.totalCustomers > 0 ? (data.activeCustomers / data.totalCustomers * 100).toFixed(1) : 0;
-        
-        return `👥 تحليل العملاء:
-
-📊 الإحصائيات:
-• إجمالي العملاء: ${data.totalCustomers}
-• العملاء النشطين: ${data.activeCustomers}
-• العملاء غير النشطين: ${inactiveCustomers}
-• معدل النشاط: ${activeRate}%
-
-💡 التوصيات:
-${inactiveCustomers > 0 ? 
-  `• ركز على متابعة ${inactiveCustomers} عميل غير نشط
-• أرسل عروضاً حصرية لإعادتهم` : 
-  '• ممتاز! جميع عملائك نشطين'}`;
-    }
-
-    if (lowerMsg.includes('مبيعات') || lowerMsg.includes('ربح')) {
-        const avgSale = data.totalSales > 0 ? (data.salesAmount / data.totalSales).toFixed(2) : 0;
-        
-        return `💰 تحليل المبيعات:
-
-📈 الأداء:
-• إجمالي المبيعات: ${data.salesAmount} دينار
-• عدد العمليات: ${data.totalSales}
-• متوسط البيع: ${avgSale} دينار
-
-🎯 الاستراتيجيات:
-${data.totalSales === 0 ? '• ابدأ بتسجيل مبيعاتك الأولى' :
- avgSale < 100 ? '• ركز على زيادة متوسط قيمة البيع' : 
- '• وسع قنوات البيع والتسويق'}`;
-    }
-
-    return `🤖 مساعد Data Vision
-
-📊 نظرة عامة على أدائك:
-• ${data.totalCustomers} عميل
-• ${data.totalSales} عملية بيع
-• ${data.salesAmount} دينار إجمالي مبيعات
-
-💡 اسألني عن:
-• "تحليل العملاء"
-• "تحليل المبيعات" 
-• "تقرير شامل"
-
-أنا هنا لمساعدتك في تحسين أداء متجرك! 🚀`;
-}
-
-// 🛠️ إدارة النظام
-
-// إعادة تهيئة قاعدة البيانات
-app.post('/api/admin/init-db', async (req, res) => {
-    try {
-        await initializeDatabase();
-        res.json({ 
-            success: true,
-            message: '✅ تم تهيئة قاعدة البيانات بنجاح' 
-        });
-    } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في التهيئة' 
-        });
-    }
-});
-
-// فحص حالة قاعدة البيانات
-app.get('/api/admin/db-status', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-        `);
-        
-        res.json({ 
-            success: true,
-            tables: result.rows,
-            message: `📋 عدد الجداول: ${result.rows.length}`
-        });
-    } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            error: 'خطأ في فحص قاعدة البيانات' 
-        });
+        res.status(500).json({ error: 'خطأ في إضافة البيع' });
     }
 });
 
@@ -951,21 +698,10 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'register.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
-
 // 🔥 تشغيل السيرفر
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Data Vision server running on port ${PORT}`);
     console.log(`🌐 Live at: https://your-app.onrender.com`);
     console.log(`📊 Connected to: Neon PostgreSQL Database`);
     console.log(`🔌 Socket.IO ready for real-time updates`);
-    console.log(`🔍 Test endpoints:`);
-    console.log(`   - https://your-app.onrender.com/api/test`);
-    console.log(`   - https://your-app.onrender.com/health`);
 });
