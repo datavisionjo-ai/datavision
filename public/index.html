@@ -4,76 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Vision - نظام إدارة العملاء والمبيعات</title>
     <link rel="stylesheet" href="css/index.css">
-    <style>
-        /* أنماط بطاقة المستخدم */
-        .user-info-card {
-            background: linear-gradient(135deg, var(--dark-700) 0%, var(--dark-600) 100%);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        .user-info-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-        }
-        .user-info-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .user-info-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .user-info-details h3 {
-            color: var(--primary);
-            margin-bottom: 5px;
-        }
-        .user-info-details p {
-            color: #666;
-            font-size: 14px;
-        }
-        .user-info-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .user-stat {
-            text-align: center;
-            padding: 10px;
-            background: rgba(91, 46, 222, 0.1);
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
-        .user-stat-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--primary);
-            margin-bottom: 5px;
-        }
-        .user-stat-label {
-            font-size: 12px;
-            color: #666;
-        }
-    </style>
+    
 </head>
 <body>
 
@@ -101,41 +32,7 @@
             <div id="dashboard" class="tab-content active">
                 <h2 class="page-title-black">لوحة التحكم</h2>
                 <!-- هذا الكود يضيف بطاقة جميلة في لوحة التحكم تعرض إحصائياتك -->
-<div class="user-info-card">
-    <div class="user-info-header">
-        <div class="user-info-avatar">👤</div>
-        <div class="user-info-details">
-            <h3 id="dashboardUserName">مرحباً!</h3>
-            <p id="dashboardUserRole">مدير النظام</p>
-        </div>
-    </div>
-    
-    <div class="user-info-stats">
-        <!-- عميل -->
-        <div class="user-stat">
-            <div class="user-stat-value">25</div>
-            <div class="user-stat-label">عميل</div>
-        </div>
-        
-        <!-- عملية بيع -->
-        <div class="user-stat">
-            <div class="user-stat-value">150</div>
-            <div class="user-stat-label">عملية بيع</div>
-        </div>
-        
-        <!-- دينار -->
-        <div class="user-stat">
-            <div class="user-stat-value">5,250</div>
-            <div class="user-stat-label">دينار</div>
-        </div>
-        
-        <!-- نشاط -->
-        <div class="user-stat">
-            <div class="user-stat-value">85%</div>
-            <div class="user-stat-label">نشاط</div>
-        </div>
-    </div>
-</div>
+
                 <div class="stats-grid">
                     <div class="stat-card">
                         <h3>إجمالي العملاء</h3>
@@ -448,6 +345,7 @@
 </body>
 
 </html>
+
 
 
 
