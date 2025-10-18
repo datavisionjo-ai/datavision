@@ -1,4 +1,4 @@
-// Free-API-Working.js
+// aI-integration.js - معدل كامل
 class WorkingFreeAI {
     constructor() {
         this.apis = [
@@ -46,9 +46,9 @@ class WorkingFreeAI {
                     const data = await response.json();
                     
                     if (api.name === "HuggingFace") {
-                        return data[0]?.generated_text || "🤖 مرحباً! كيف أساعدك؟";
+                        return data[0]?.generated_text || "🤖 مرحباً! كيف أساعدك في إدارة عملائك ومبيعاتك اليوم؟";
                     } else if (api.name === "OpenRouter") {
-                        return data.choices[0]?.message?.content || "🤖 أهلاً بك في DataBuddy!";
+                        return data.choices[0]?.message?.content || "🤖 أهلاً بك في Data Vision! كيف يمكنني مساعدتك في تحليل بياناتك؟";
                     }
                 }
             } catch (error) {
@@ -57,7 +57,7 @@ class WorkingFreeAI {
             }
         }
         
-        return "🚀 جاري تحميل الخدمات... جرب مرة أخرى بعد قليل";
+        return "🚀 أنا مساعد Data Vision الذكي. يمكنني مساعدتك في تحليل بيانات العملاء والمبيعات، تقديم نصائح لتحسين الأداء، ومساعدتك في إدارة متجرك بشكل أكثر فعالية. 💼";
     }
 }
 
@@ -67,6 +67,8 @@ const freeAI = new WorkingFreeAI();
 // ربط مع واجهتك
 async function sendFreeMessage() {
     const input = document.getElementById('assistantInput');
+    if (!input) return;
+    
     const message = input.value.trim();
     
     if (!message) return;
@@ -78,15 +80,24 @@ async function sendFreeMessage() {
     // مؤشر تحميل
     showTypingIndicator();
     
-    // احصل على الرد
-    const response = await freeAI.getAIResponse(message);
-    
-    // أضف الرد
-    hideTypingIndicator();
-    addMessageToChat(response, 'ai');
+    try {
+        // احصل على الرد
+        const response = await freeAI.getAIResponse(message);
+        
+        // أضف الرد
+        hideTypingIndicator();
+        addMessageToChat(response, 'ai');
+    } catch (error) {
+        hideTypingIndicator();
+        addMessageToChat("⚠️ عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.", 'ai');
+    }
 }
 
 // وظيفة إرسال رسالة (للتوافق مع الكود القديم)
 async function sendMessage() {
     await sendFreeMessage();
 }
+
+// جعل الدوال متاحة globally
+window.sendFreeMessage = sendFreeMessage;
+window.sendMessage = sendMessage;
