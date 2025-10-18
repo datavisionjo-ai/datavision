@@ -1,21 +1,82 @@
-<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Vision - نظام إدارة العملاء والمبيعات</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="js/api-client.js"></script>
-    <script src="js/Basic-data-configuration-and-management.js"></script>
-    <script src="js/Customer-and-sales-management.js"></script>
-    <script src="js/aI-integration.js"></script>
-    <!-- قبل إغلاق </body> -->
-<script src="js/user-menu.js"></script>
     <link rel="stylesheet" href="css/index.css">
-  
+    <style>
+        /* أنماط بطاقة المستخدم */
+        .user-info-card {
+            background: linear-gradient(135deg, var(--dark-700) 0%, var(--dark-600) 100%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .user-info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+        }
+        .user-info-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .user-info-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .user-info-details h3 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .user-info-details p {
+            color: #666;
+            font-size: 14px;
+        }
+        .user-info-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .user-stat {
+            text-align: center;
+            padding: 10px;
+            background: rgba(91, 46, 222, 0.1);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .user-stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .user-stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
+
     <div class="notification" id="notification"></div>
 
     <div class="container">
@@ -377,9 +438,17 @@
             </form>
         </div>
     </div>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/Basic-data-configuration-and-management.js"></script>
+    <script src="js/Customer-and-sales-management.js"></script>
+    <script src="js/aI-integration.js"></script>
+    <script src="js/user-menu.js"></script>
 </body>
 
 </html>
+
 
 
 
