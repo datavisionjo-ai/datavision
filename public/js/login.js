@@ -1,5 +1,5 @@
 // login.js - معدل كامل مع دوال API
-const API_BASE_URL = window.location.origin;
+const API_BASE_URL = https://datavision-nilx.onrender.com;
 
 // دوال API للاتصال بالسيرفر
 async function login(email, password) {
@@ -380,3 +380,4 @@ window.handleSignup = handleSignup;
 window.isValidEmail = isValidEmail;
 window.login = login;
 window.register = register;
+
