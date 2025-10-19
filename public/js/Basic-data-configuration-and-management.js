@@ -2,7 +2,7 @@
 let customers = [];
 let sales = [];
 let settings = {
-    defaultMessage: 'مرحباً {name}، شكراً لاختيارك DataBuddy!'
+    defaultMessage: 'مرحباً {name}، شكراً لاختيارك Data Vision!'
 };
 let editingCustomerId = null;
 let statusChart, salesChart;
@@ -77,9 +77,9 @@ async function loadData() {
 
 function loadFromLocalStorage() {
     try {
-        const savedCustomers = localStorage.getItem('databuddy_customers');
-        const savedSales = localStorage.getItem('databuddy_sales');
-        const savedSettings = localStorage.getItem('databuddy_settings');
+        const savedCustomers = localStorage.getItem('datavision_customers');
+        const savedSales = localStorage.getItem('datavision_sales');
+        const savedSettings = localStorage.getItem('datavision_settings');
         
         if (savedCustomers) {
             customers = JSON.parse(savedCustomers);
@@ -99,7 +99,7 @@ function loadFromLocalStorage() {
             try {
                 settings = JSON.parse(savedSettings);
             } catch (e) {
-                settings = { defaultMessage: 'مرحباً {name}، شكراً لاختيارك DataBuddy!' };
+                settings = { defaultMessage: 'مرحباً {name}، شكراً لاختيارك Data Vision!' };
             }
         }
         
@@ -111,7 +111,7 @@ function loadFromLocalStorage() {
         console.error('❌ خطأ في تحميل البيانات المحلية:', error);
         customers = [];
         sales = [];
-        settings = { defaultMessage: 'مرحباً {name}، شكراً لاختيارك DataBuddy!' };
+        settings = { defaultMessage: 'مرحباً {name}، شكراً لاختيارك Data Vision!' };
     }
 }
 
@@ -120,9 +120,9 @@ async function saveData() {
         if (isLoggedIn()) {
             console.log('💾 البيانات محفوظة في السيرفر');
         } else {
-            localStorage.setItem('databuddy_customers', JSON.stringify(customers));
-            localStorage.setItem('databuddy_sales', JSON.stringify(sales));
-            localStorage.setItem('databuddy_settings', JSON.stringify(settings));
+            localStorage.setItem('datavision_customers', JSON.stringify(customers));
+            localStorage.setItem('datavision_sales', JSON.stringify(sales));
+            localStorage.setItem('datavision_settings', JSON.stringify(settings));
             console.log('💾 البيانات محفوظة محلياً:', {
                 customers: customers.length,
                 sales: sales.length
@@ -132,10 +132,6 @@ async function saveData() {
         console.error('❌ خطأ في حفظ البيانات:', error);
         showNotification('خطأ في حفظ البيانات', 'error');
     }
-}
-
-function resetActivation() {
-    window.location.href = "About.html";
 }
 
 // ============ نظام التبويب والواجهة ============
@@ -314,67 +310,20 @@ function hideTypingIndicator() {
 }
 
 function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()">×</button>
-        </div>
-    `;
-    
-    if (!document.querySelector('#notification-styles')) {
-        const styles = document.createElement('style');
-        styles.id = 'notification-styles';
-        styles.textContent = `
-            .notification {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: var(--success);
-                color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                z-index: 10000;
-                animation: slideIn 0.3s ease;
-            }
-            .notification-error { background: var(--danger); }
-            .notification-warning { background: var(--warning); color: var(--dark); }
-            .notification-content {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            .notification button {
-                background: none;
-                border: none;
-                color: white;
-                font-size: 18px;
-                cursor: pointer;
-                padding: 0;
-                width: 20px;
-                height: 20px;
-            }
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(styles);
+    const notification = document.getElementById('notification');
+    if (notification) {
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 5000);
     }
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        if (notification.parentElement) {
-            notification.remove();
-        }
-    }, 5000);
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+    document.getElementById(modalId).style.display = 'none';
 }
 
 function sendWhatsApp(customerId) {
@@ -496,11 +445,11 @@ async function analyzeBusinessData() {
 // ============ نظام استيراد وتصدير البيانات ============
 
 function openExportModal() {
-    document.getElementById('exportModal').classList.add('active');
+    document.getElementById('exportModal').style.display = 'block';
 }
 
 function openImportModal() {
-    document.getElementById('importModal').classList.add('active');
+    document.getElementById('importModal').style.display = 'block';
 }
 
 function exportData() {
@@ -529,6 +478,123 @@ function exportData() {
         console.error('خطأ في التصدير:', error);
         showNotification('خطأ في تصدير البيانات', 'error');
     }
+}
+
+function exportToExcel() {
+    try {
+        // جلب البيانات
+        const customers = JSON.parse(localStorage.getItem('datavision_customers')) || [];
+        const sales = JSON.parse(localStorage.getItem('datavision_sales')) || [];
+        
+        // إنشاء مصنف Excel
+        const wb = XLSX.utils.book_new();
+        
+        // تحضير بيانات العملاء لـ Excel
+        const customersData = customers.map(customer => ({
+            'الاسم': customer.name,
+            'رقم الهاتف': customer.phone,
+            'البريد الإلكتروني': customer.email || '',
+            'الحالة': customer.status === 'active' ? 'نشط' : 'غير نشط',
+            'تاريخ الإضافة': customer.createdAt,
+            'ملاحظات': customer.notes || ''
+        }));
+        
+        // تحضير بيانات المبيعات لـ Excel
+        const salesData = sales.map(sale => {
+            const customer = customers.find(c => c.id === sale.customerId);
+            return {
+                'اسم العميل': customer ? customer.name : 'غير معروف',
+                'المبلغ (دينار)': sale.amount,
+                'التاريخ': sale.date,
+                'الوصف': sale.description || '',
+                'رقم العملية': sale.id
+            };
+        });
+        
+        // إنشاء أوراق العمل
+        const customersWs = XLSX.utils.json_to_sheet(customersData);
+        const salesWs = XLSX.utils.json_to_sheet(salesData);
+        
+        // إضافة أوراق العمل للمصنف
+        XLSX.utils.book_append_sheet(wb, customersWs, 'العملاء');
+        XLSX.utils.book_append_sheet(wb, salesWs, 'المبيعات');
+        
+        // تصدير الملف
+        XLSX.writeFile(wb, `DataVision_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+        
+        showNotification('✅ تم تصدير البيانات بنجاح بصيغة Excel', 'success');
+        closeModal('exportModal');
+    } catch (error) {
+        console.error('خطأ في تصدير Excel:', error);
+        showNotification('❌ فشل في تصدير البيانات بصيغة Excel', 'error');
+    }
+}
+
+function exportToCSV() {
+    try {
+        // جلب البيانات
+        const customers = JSON.parse(localStorage.getItem('datavision_customers')) || [];
+        const sales = JSON.parse(localStorage.getItem('datavision_sales')) || [];
+        
+        // تصدير العملاء كـ CSV
+        if (customers.length > 0) {
+            const customersHeaders = ['الاسم', 'رقم الهاتف', 'البريد الإلكتروني', 'الحالة', 'تاريخ الإضافة', 'ملاحظات'];
+            let customersCsv = '\uFEFF' + customersHeaders.join(',') + '\n';
+            
+            customers.forEach(customer => {
+                const row = [
+                    `"${customer.name}"`,
+                    `"${customer.phone}"`,
+                    `"${customer.email || ''}"`,
+                    `"${customer.status === 'active' ? 'نشط' : 'غير نشط'}"`,
+                    `"${customer.createdAt}"`,
+                    `"${(customer.notes || '').replace(/"/g, '""')}"`
+                ];
+                customersCsv += row.join(',') + '\n';
+            });
+            
+            downloadCSV(customersCsv, `DataVision_Customers_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+        
+        // تصدير المبيعات كـ CSV
+        if (sales.length > 0) {
+            const salesHeaders = ['اسم العميل', 'المبلغ (دينار)', 'التاريخ', 'الوصف', 'رقم العملية'];
+            let salesCsv = '\uFEFF' + salesHeaders.join(',') + '\n';
+            
+            sales.forEach(sale => {
+                const customer = customers.find(c => c.id === sale.customerId);
+                const row = [
+                    `"${customer ? customer.name : 'غير معروف'}"`,
+                    sale.amount,
+                    `"${sale.date}"`,
+                    `"${(sale.description || '').replace(/"/g, '""')}"`,
+                    sale.id
+                ];
+                salesCsv += row.join(',') + '\n';
+            });
+            
+            downloadCSV(salesCsv, `DataVision_Sales_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+        
+        showNotification('✅ تم تصدير البيانات بنجاح بصيغة CSV', 'success');
+        closeModal('exportModal');
+    } catch (error) {
+        console.error('خطأ في تصدير CSV:', error);
+        showNotification('❌ فشل في تصدير البيانات بصيغة CSV', 'error');
+    }
+}
+
+// دالة مساعدة لتحميل ملف CSV
+function downloadCSV(csvContent, fileName) {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 function importData(event) {
@@ -604,6 +670,258 @@ function importData(event) {
     event.target.value = '';
 }
 
+function importFromExcel(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            let importedCustomers = [];
+            let importedSales = [];
+            
+            // معالجة ورقة العملاء
+            if (workbook.Sheets['العملاء']) {
+                const customersData = XLSX.utils.sheet_to_json(workbook.Sheets['العملاء']);
+                importedCustomers = customersData.map(row => ({
+                    id: generateId(),
+                    name: row['الاسم'] || '',
+                    phone: String(row['رقم الهاتف'] || ''),
+                    email: row['البريد الإلكتروني'] || '',
+                    status: row['الحالة'] === 'نشط' ? 'active' : 'inactive',
+                    createdAt: row['تاريخ الإضافة'] || new Date().toISOString().split('T')[0],
+                    notes: row['ملاحظات'] || '',
+                    lastContact: new Date().toISOString().split('T')[0]
+                })).filter(customer => customer.name && customer.phone); // تصفية البيانات الفارغة
+            }
+            
+            // معالجة ورقة المبيعات
+            if (workbook.Sheets['المبيعات']) {
+                const salesData = XLSX.utils.sheet_to_json(workbook.Sheets['المبيعات']);
+                const allCustomers = [...customers, ...importedCustomers]; // دمج العملاء الحاليين والمستوردين
+                
+                importedSales = salesData.map(row => {
+                    // البحث عن العميل المطابق (بالاسم أو الهاتف)
+                    const customerName = row['اسم العميل'] || '';
+                    const customer = allCustomers.find(c => 
+                        c.name === customerName || 
+                        c.phone === String(row['رقم الهاتف'] || '')
+                    );
+                    
+                    return {
+                        id: generateId(),
+                        customerId: customer ? customer.id : null,
+                        customerName: customerName, // حفظ اسم العميل للرجوع إليه
+                        amount: parseFloat(row['المبلغ (دينار)']) || 0,
+                        date: formatDate(row['التاريخ']) || new Date().toISOString().split('T')[0],
+                        description: row['الوصف'] || '',
+                        createdAt: new Date().toISOString()
+                    };
+                }).filter(sale => sale.amount > 0); // استبعاد المبيعات ذات المبلغ صفر
+            }
+            
+            // 🔄 تحديث البيانات في الذاكرة والتخزين
+            if (importedCustomers.length > 0) {
+                customers = [...customers, ...importedCustomers];
+                console.log(`✅ تم استيراد ${importedCustomers.length} عميل`);
+            }
+            
+            if (importedSales.length > 0) {
+                sales = [...sales, ...importedSales];
+                console.log(`✅ تم استيراد ${importedSales.length} عملية بيع`);
+            }
+            
+            // حفظ البيانات المحدثة
+            saveData().then(() => {
+                showNotification(`✅ تم استيراد ${importedCustomers.length} عميل و ${importedSales.length} عملية بيع من Excel`, 'success');
+                closeModal('importModal');
+                
+                // تحديث الواجهة
+                renderCustomers();
+                renderSales();
+                updateDashboard();
+                updateCharts();
+                updateAIInsights();
+                
+            }).catch(error => {
+                console.error('خطأ في حفظ البيانات بعد الاستيراد:', error);
+                showNotification('❌ فشل في حفظ البيانات المستوردة', 'error');
+            });
+            
+        } catch (error) {
+            console.error('خطأ في استيراد Excel:', error);
+            showNotification('❌ فشل في استيراد البيانات من Excel: ' + error.message, 'error');
+        }
+    };
+    
+    reader.onerror = function() {
+        showNotification('❌ خطأ في قراءة الملف', 'error');
+    };
+    
+    reader.readAsArrayBuffer(file);
+    event.target.value = ''; // reset input
+}
+
+// دالة مساعدة لتنسيق التواريخ
+function formatDate(dateInput) {
+    if (!dateInput) return null;
+    
+    try {
+        // إذا كان التاريخ كائن Date
+        if (dateInput instanceof Date) {
+            return dateInput.toISOString().split('T')[0];
+        }
+        
+        // إذا كان سلسلة نصية
+        if (typeof dateInput === 'string') {
+            // تحويل من صيغة Excel (أرقام متسلسلة)
+            if (!isNaN(dateInput) && dateInput > 25568) { // Excel date serial number
+                const excelEpoch = new Date(1899, 11, 30);
+                const date = new Date(excelEpoch.getTime() + (dateInput - 1) * 24 * 60 * 60 * 1000);
+                return date.toISOString().split('T')[0];
+            }
+            
+            // محاولة تحليل الصيغ الشائعة
+            const date = new Date(dateInput);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
+            }
+        }
+        
+        return null;
+    } catch (error) {
+        console.warn('تعذر تنسيق التاريخ:', dateInput, error);
+        return null;
+    }
+}
+
+function importFromCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const csvText = e.target.result;
+            const lines = csvText.split('\n');
+            
+            if (lines.length < 2) {
+                throw new Error('الملف لا يحتوي على بيانات كافية');
+            }
+            
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            let importedData = [];
+            
+            // معالجة البيانات
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                const values = parseCSVLine(lines[i]);
+                if (values.length !== headers.length) continue;
+                
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index].replace(/^"|"$/g, '');
+                });
+                importedData.push(row);
+            }
+            
+            // تحديد نوع البيانات (عملاء أو مبيعات)
+            if (headers.includes('الاسم') && headers.includes('رقم الهاتف')) {
+                // بيانات العملاء
+                const importedCustomers = importedData.map(row => ({
+                    id: generateId(),
+                    name: row['الاسم'] || '',
+                    phone: row['رقم الهاتف'] || '',
+                    email: row['البريد الإلكتروني'] || '',
+                    status: row['الحالة'] === 'نشط' ? 'active' : 'inactive',
+                    createdAt: row['تاريخ الإضافة'] || new Date().toISOString().split('T')[0],
+                    notes: row['ملاحظات'] || '',
+                    lastContact: new Date().toISOString().split('T')[0]
+                }));
+                
+                const existingCustomers = JSON.parse(localStorage.getItem('datavision_customers')) || [];
+                const mergedCustomers = [...existingCustomers, ...importedCustomers];
+                localStorage.setItem('datavision_customers', JSON.stringify(mergedCustomers));
+                
+                showNotification(`✅ تم استيراد ${importedCustomers.length} عميل من CSV`, 'success');
+                
+            } else if (headers.includes('اسم العميل') && headers.includes('المبلغ (دينار)')) {
+                // بيانات المبيعات
+                const existingCustomers = JSON.parse(localStorage.getItem('datavision_customers')) || [];
+                const importedSales = importedData.map(row => {
+                    const customer = existingCustomers.find(c => c.name === row['اسم العميل']);
+                    
+                    return {
+                        id: generateId(),
+                        customerId: customer ? customer.id : null,
+                        amount: parseFloat(row['المبلغ (دينار)']) || 0,
+                        date: row['التاريخ'] || new Date().toISOString().split('T')[0],
+                        description: row['الوصف'] || '',
+                        createdAt: new Date().toISOString()
+                    };
+                }).filter(sale => sale.customerId !== null);
+                
+                const existingSales = JSON.parse(localStorage.getItem('datavision_sales')) || [];
+                const mergedSales = [...existingSales, ...importedSales];
+                localStorage.setItem('datavision_sales', JSON.stringify(mergedSales));
+                
+                showNotification(`✅ تم استيراد ${importedSales.length} عملية بيع من CSV`, 'success');
+            } else {
+                throw new Error('تنسيق CSV غير معروف');
+            }
+            
+            closeModal('importModal');
+            
+            // تحديث الواجهة
+            setTimeout(() => {
+                if (typeof loadCustomers === 'function') loadCustomers();
+                if (typeof loadSales === 'function') loadSales();
+                if (typeof updateDashboard === 'function') updateDashboard();
+            }, 500);
+            
+        } catch (error) {
+            console.error('خطأ في استيراد CSV:', error);
+            showNotification('❌ فشل في استيراد البيانات من CSV', 'error');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+// ============ وظائف مساعدة للاستيراد والتصدير ============
+
+// دالة تحليل سطور CSV
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    
+    result.push(current);
+    return result;
+}
+
+// دالة إنشاء معرف فريد
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
 function cleanImportedCustomers(customersArray) {
     return customersArray.map(customer => {
         return {
@@ -631,24 +949,6 @@ function cleanImportedSales(salesArray) {
     }).filter(sale => sale.customerId && sale.amount > 0);
 }
 
-function exportToExcel() {
-    showNotification('ميزة التصدير إلى Excel قيد التطوير', 'warning');
-}
-
-function exportToCSV() {
-    showNotification('ميزة التصدير إلى CSV قيد التطوير', 'warning');
-}
-
-function importFromExcel(event) {
-    showNotification('ميزة الاستيراد من Excel قيد التطوير', 'warning');
-    event.target.value = '';
-}
-
-function importFromCSV(event) {
-    showNotification('ميزة الاستيراد من CSV قيد التطوير', 'warning');
-    event.target.value = '';
-}
-
 function clearAllData() {
     if (!confirm('⚠️ هل أنت متأكد من مسح جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء!')) {
         return;
@@ -656,7 +956,7 @@ function clearAllData() {
     
     customers = [];
     sales = [];
-    settings = { defaultMessage: 'مرحباً {name}، شكراً لاختيارك DataBuddy!' };
+    settings = { defaultMessage: 'مرحباً {name}، شكراً لاختيارك Data Vision!' };
     
     saveData().then(() => {
         renderCustomers();
@@ -786,11 +1086,183 @@ async function saveSale(e) {
     }
 }
 
+// ============ دوال العرض الأساسية المفقودة ============
+
+function renderCustomers() {
+    console.log('🔄 عرض العملاء:', customers.length);
+    const container = document.getElementById('customersContainer');
+    if (!container) return;
+    
+    if (customers.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>لا يوجد عملاء حتى الآن</p>
+                <button class="btn btn-primary" onclick="document.getElementById('customerModal').style.display='block'">
+                    إضافة أول عميل
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = customers.map(customer => {
+        const purchases = getCustomerPurchases(customer.id);
+        return `
+            <div class="customer-card">
+                <div class="customer-info">
+                    <h3>${customer.name}</h3>
+                    <p>📱 ${customer.phone}</p>
+                    ${customer.email ? `<p>📧 ${customer.email}</p>` : ''}
+                    <p>الحالة: <span class="status ${customer.status}">${customer.status === 'active' ? 'نشط' : 'غير نشط'}</span></p>
+                    ${purchases.count > 0 ? `<p>🛒 ${purchases.count} عملية شراء (${purchases.total.toFixed(2)} دينار)</p>` : ''}
+                    ${customer.notes ? `<p>📝 ${customer.notes}</p>` : ''}
+                </div>
+                <div class="customer-actions">
+                    <button class="btn btn-primary" onclick="sendWhatsApp('${customer.id}')">
+                        💬 واتساب
+                    </button>
+                    <button class="btn btn-secondary" onclick="editCustomer('${customer.id}')">
+                        ✏️ تعديل
+                    </button>
+                    <button class="btn btn-danger" onclick="deleteCustomer('${customer.id}')">
+                        🗑️ حذف
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderSales() {
+    console.log('🔄 عرض المبيعات:', sales.length);
+    const container = document.getElementById('salesContainer');
+    if (!container) return;
+    
+    if (sales.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>لا توجد مبيعات حتى الآن</p>
+                <button class="btn btn-primary" onclick="document.getElementById('saleModal').style.display='block'">
+                    إضافة أول عملية بيع
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = sales.map(sale => {
+        const customer = customers.find(c => c.id === sale.customerId || c.id === sale.customer_id);
+        return `
+            <div class="sale-card">
+                <div class="sale-info">
+                    <h3>💰 ${parseFloat(sale.amount).toFixed(2)} دينار</h3>
+                    <p>👤 ${customer ? customer.name : 'عميل غير معروف'}</p>
+                    <p>📅 ${sale.date || sale.sale_date}</p>
+                    ${sale.description ? `<p>📝 ${sale.description}</p>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function editCustomer(id) {
+    const customer = customers.find(c => c.id === id);
+    if (!customer) return;
+    
+    editingCustomerId = id;
+    document.getElementById('customerName').value = customer.name;
+    document.getElementById('customerPhone').value = customer.phone;
+    document.getElementById('customerEmail').value = customer.email || '';
+    document.getElementById('customerStatus').value = customer.status;
+    document.getElementById('customerNotes').value = customer.notes || '';
+    
+    document.getElementById('customerModal').style.display = 'block';
+}
+
+// ============ دوال المساعد AI المفقودة ============
+
+function addMessageToChat(message, type) {
+    const chatContainer = document.getElementById('chatContainer');
+    if (!chatContainer) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${type}-message`;
+    messageDiv.innerHTML = `
+        <div class="message-avatar">${type === 'user' ? '👤' : '🤖'}</div>
+        <div class="message-content">
+            <div class="message-text">${message}</div>
+        </div>
+    `;
+    
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function sendFreeMessage() {
+    const inputField = document.getElementById('assistantInput');
+    if (!inputField) return;
+    
+    const message = inputField.value.trim();
+    if (!message) return;
+    
+    // إضافة رسالة المستخدم
+    addMessageToChat(message, 'user');
+    inputField.value = '';
+    
+    // عرض مؤشر الكتابة
+    showTypingIndicator();
+    
+    // محاكاة رد المساعد
+    setTimeout(() => {
+        hideTypingIndicator();
+        
+        let response = '';
+        if (message.includes('تحليل') || message.includes('تحليلات')) {
+            response = analyzeBusinessDataSync();
+        } else if (message.includes('عملاء') || message.includes('زبائن')) {
+            response = `لديك ${customers.length} عميل (${customers.filter(c => c.status === 'active').length} نشطين)`;
+        } else if (message.includes('مبيعات') || message.includes('بيع')) {
+            const totalSales = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+            response = `إجمالي المبيعات: ${totalSales.toFixed(2)} دينار من ${sales.length} عملية بيع`;
+        } else {
+            response = `يمكنني مساعدتك في تحليل بيانات العملاء والمبيعات. اسألني عن:\n• عدد العملاء والمبيعات\n• تحليلات الأعمال\n• التوصيات والإحصائيات`;
+        }
+        
+        addMessageToChat(response, 'ai');
+    }, 1500);
+}
+
+function analyzeBusinessDataSync() {
+    const totalCustomers = customers.length;
+    const activeCustomers = customers.filter(c => c.status === 'active').length;
+    const totalSales = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+    const avgSale = sales.length > 0 ? totalSales / sales.length : 0;
+    
+    let analysis = `📊 **تحليل الأعمال الحالي:**\n\n`;
+    analysis += `👥 **العملاء:** ${totalCustomers} عميل (${activeCustomers} نشط)\n`;
+    analysis += `💰 **إجمالي المبيعات:** ${totalSales.toFixed(2)} دينار\n`;
+    analysis += `📈 **متوسط البيع:** ${avgSale.toFixed(2)} دينار\n\n`;
+    
+    if (totalCustomers < 10) {
+        analysis += `💡 **توصية:** ركز على جذب المزيد من العملاء\n`;
+    }
+    
+    if (activeCustomers / totalCustomers < 0.7) {
+        analysis += `💡 **توصية:** انتبه لنسبة العملاء النشطين\n`;
+    }
+    
+    if (sales.length === 0) {
+        analysis += `💡 **توصية:** ابدأ بتسجيل عمليات البيع\n`;
+    }
+    
+    return analysis;
+}
+
 // ============ التهيئة التلقائية ============
 
 // تهيئة التطبيق عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DataBuddy - جاهز للعمل!');
+    console.log('🚀 Data Vision - جاهز للعمل!');
     setTimeout(init, 100);
 });
 
@@ -815,3 +1287,6 @@ window.importFromExcel = importFromExcel;
 window.importFromCSV = importFromCSV;
 window.clearAllData = clearAllData;
 window.saveDefaultMessage = saveDefaultMessage;
+window.renderCustomers = renderCustomers;
+window.renderSales = renderSales;
+window.editCustomer = editCustomer;
