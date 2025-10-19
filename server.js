@@ -51,6 +51,22 @@ const pool = new Pool({
     }
 });
 
+// فحص الاتصال بقاعدة البيانات
+async function testConnection() {
+    try {
+        const client = await pool.connect();
+        console.log('✅ تم الاتصال بقاعدة البيانات بنجاح');
+        client.release();
+        return true;
+    } catch (error) {
+        console.error('❌ فشل الاتصال بقاعدة البيانات:', error.message);
+        return false;
+    }
+}
+
+// فحص الاتصال عند بدء التشغيل
+testConnection();
+
 // ... باقي الكود يبقى كما هو
 
 // 🔧 دالة تهيئة قاعدة البيانات
