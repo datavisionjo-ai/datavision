@@ -1,9 +1,12 @@
-// login.js - معدل كامل مع دوال API
+// login.js - معدل مع debugging
 const API_BASE_URL = https://datavision-nilx.onrender.com;
+console.log('🔗 API Base URL:', API_BASE_URL);
 
 // دوال API للاتصال بالسيرفر
 async function login(email, password) {
     try {
+        console.log('🔐 محاولة تسجيل دخول:', { email });
+        
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: 'POST',
             headers: {
@@ -12,7 +15,10 @@ async function login(email, password) {
             body: JSON.stringify({ email, password })
         });
 
+        console.log('📡 استجابة تسجيل الدخول:', response.status);
+        
         const data = await response.json();
+        console.log('📊 بيانات الاستجابة:', data);
         
         if (data.success) {
             // حفظ التوكن والمستخدم
@@ -23,13 +29,15 @@ async function login(email, password) {
             throw new Error(data.error || 'فشل تسجيل الدخول');
         }
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('❌ خطأ في تسجيل الدخول:', error);
         throw error;
     }
 }
 
 async function register(name, email, password) {
     try {
+        console.log('📝 محاولة إنشاء حساب:', { name, email });
+        
         const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
             method: 'POST',
             headers: {
@@ -38,7 +46,10 @@ async function register(name, email, password) {
             body: JSON.stringify({ name, email, password })
         });
 
+        console.log('📡 استجابة إنشاء الحساب:', response.status);
+        
         const data = await response.json();
+        console.log('📊 بيانات الاستجابة:', data);
         
         if (data.success) {
             // حفظ التوكن والمستخدم
@@ -49,7 +60,7 @@ async function register(name, email, password) {
             throw new Error(data.error || 'فشل إنشاء الحساب');
         }
     } catch (error) {
-        console.error('Register error:', error);
+        console.error('❌ خطأ في إنشاء الحساب:', error);
         throw error;
     }
 }
@@ -57,11 +68,39 @@ async function register(name, email, password) {
 // دوال المساعدة
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
-    if (!notification) return;
+    if (!notification) {
+        // إنشاء إشعار إذا لم يكن موجوداً
+        const newNotification = document.createElement('div');
+        newNotification.id = 'notification';
+        newNotification.className = `notification ${type}`;
+        newNotification.textContent = message;
+        newNotification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            z-index: 10000;
+            display: block;
+            max-width: 400px;
+        `;
+        if (type === 'success') newNotification.style.background = '#28a745';
+        if (type === 'error') newNotification.style.background = '#dc3545';
+        document.body.appendChild(newNotification);
+        
+        setTimeout(() => {
+            newNotification.remove();
+        }, 5000);
+        return;
+    }
     
     notification.textContent = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
+    
+    if (type === 'success') notification.style.background = '#28a745';
+    if (type === 'error') notification.style.background = '#dc3545';
     
     setTimeout(() => {
         notification.style.display = 'none';
@@ -134,9 +173,6 @@ function checkPasswordStrength(password) {
         strengthFill.style.width = '0%';
         strengthText.textContent = 'لم يتم إدخال كلمة مرور';
         if (strengthLevel) strengthLevel.style.display = 'none';
-        if (document.getElementById('signupPassword')) {
-            document.getElementById('signupPassword').className = 'password-field';
-        }
     } else if (strength <= 1) {
         strengthFill.style.width = '20%';
         strengthFill.className += ' very-weak';
@@ -144,9 +180,6 @@ function checkPasswordStrength(password) {
         if (strengthLevel) {
             strengthLevel.textContent = 'ضعيف جداً';
             strengthLevel.className = 'strength-level very-weak';
-        }
-        if (document.getElementById('signupPassword')) {
-            document.getElementById('signupPassword').className = 'password-field weak-password';
         }
     } else if (strength <= 2) {
         strengthFill.style.width = '40%';
@@ -156,9 +189,6 @@ function checkPasswordStrength(password) {
             strengthLevel.textContent = 'ضعيف';
             strengthLevel.className = 'strength-level weak';
         }
-        if (document.getElementById('signupPassword')) {
-            document.getElementById('signupPassword').className = 'password-field weak-password';
-        }
     } else if (strength === 3) {
         strengthFill.style.width = '60%';
         strengthFill.className += ' fair';
@@ -166,9 +196,6 @@ function checkPasswordStrength(password) {
         if (strengthLevel) {
             strengthLevel.textContent = 'متوسط';
             strengthLevel.className = 'strength-level fair';
-        }
-        if (document.getElementById('signupPassword')) {
-            document.getElementById('signupPassword').className = 'password-field';
         }
     } else if (strength === 4) {
         strengthFill.style.width = '80%';
@@ -178,9 +205,6 @@ function checkPasswordStrength(password) {
             strengthLevel.textContent = 'قوي';
             strengthLevel.className = 'strength-level strong';
         }
-        if (document.getElementById('signupPassword')) {
-            document.getElementById('signupPassword').className = 'password-field strong-password';
-        }
     } else {
         strengthFill.style.width = '100%';
         strengthFill.className += ' very-strong';
@@ -189,12 +213,8 @@ function checkPasswordStrength(password) {
             strengthLevel.textContent = 'قوي جداً';
             strengthLevel.className = 'strength-level very-strong';
         }
-        if (document.getElementById('signupPassword')) {
-            document.getElementById('signupPassword').className = 'password-field strong-password';
-        }
     }
 
-    // إزالة كلاس الأنيميشن بعد انتهائها
     setTimeout(() => {
         strengthFill.classList.remove('changing');
     }, 500);
@@ -202,7 +222,6 @@ function checkPasswordStrength(password) {
 
 // تحديث التلميحات والمؤشرات
 function updateHints(hints) {
-    // تحديث التلميحات النصية
     const elements = ['lengthHint', 'numberHint', 'upperHint', 'lowerHint', 'specialHint'];
     elements.forEach((id, index) => {
         const element = document.getElementById(id);
@@ -212,7 +231,6 @@ function updateHints(hints) {
         }
     });
 
-    // تحديث المؤشرات المتقدمة
     const criteria = ['lengthCriteria', 'numberCriteria', 'upperCriteria', 'specialCriteria'];
     criteria.forEach((id, index) => {
         const element = document.getElementById(id);
@@ -241,6 +259,7 @@ function showLoginForm() {
 // معالجة تسجيل الدخول
 async function handleLogin(event) {
     event.preventDefault();
+    console.log('🟡 بدء تسجيل الدخول...');
     
     const email = document.getElementById('loginEmail')?.value;
     const password = document.getElementById('loginPassword')?.value;
@@ -263,6 +282,7 @@ async function handleLogin(event) {
             }, 1000);
         }
     } catch (error) {
+        console.error('🔴 خطأ في تسجيل الدخول:', error);
         showNotification('خطأ في تسجيل الدخول: ' + error.message, 'error');
     }
 }
@@ -270,6 +290,7 @@ async function handleLogin(event) {
 // معالجة إنشاء الحساب
 async function handleSignup(event) {
     event.preventDefault();
+    console.log('🟡 بدء إنشاء حساب...');
     
     const name = document.getElementById('signupName')?.value;
     const email = document.getElementById('signupEmail')?.value;
@@ -311,6 +332,7 @@ async function handleSignup(event) {
             }, 1000);
         }
     } catch (error) {
+        console.error('🔴 خطأ في إنشاء الحساب:', error);
         showNotification('خطأ في إنشاء الحساب: ' + error.message, 'error');
     }
 }
@@ -321,37 +343,10 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-// إضافة تحقق فوري للحقول
-document.addEventListener('DOMContentLoaded', function() {
-    const emailInput = document.getElementById('signupEmail');
-    const passwordInput = document.getElementById('signupPassword');
-    const confirmInput = document.getElementById('confirmPassword');
-    
-    if (emailInput) {
-        emailInput.addEventListener('blur', function() {
-            if (this.value && !isValidEmail(this.value)) {
-                this.style.borderColor = 'var(--danger)';
-            } else {
-                this.style.borderColor = 'var(--border)';
-            }
-        });
-    }
-    
-    if (confirmInput && passwordInput) {
-        confirmInput.addEventListener('input', function() {
-            const password = passwordInput.value;
-            if (this.value && password !== this.value) {
-                this.style.borderColor = 'var(--danger)';
-            } else {
-                this.style.borderColor = 'var(--border)';
-            }
-        });
-    }
-});
-
 // فحص اتصال السيرفر
 async function checkServerStatus() {
     try {
+        console.log('🔍 فحص اتصال السيرفر...');
         const response = await fetch(`${API_BASE_URL}/health`);
         const data = await response.json();
         console.log('✅ السيرفر متصل:', data);
@@ -365,8 +360,24 @@ async function checkServerStatus() {
 
 // فحص السيرفر عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 صفحة Login تم تحميلها');
     checkServerStatus();
+    
+    // إضافة event listeners للتأكد من أن الدوال تعمل
+    const loginForm = document.getElementById('loginFormElement');
+    const signupForm = document.getElementById('signupFormElement');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+        console.log('✅ تم إضافة event listener لتسجيل الدخول');
+    }
+    
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleSignup);
+        console.log('✅ تم إضافة event listener لإنشاء الحساب');
+    }
 });
+
 // جعل الدوال متاحة globally
 window.showNotification = showNotification;
 window.togglePasswordVisibility = togglePasswordVisibility;
@@ -380,4 +391,6 @@ window.handleSignup = handleSignup;
 window.isValidEmail = isValidEmail;
 window.login = login;
 window.register = register;
+window.checkServerStatus = checkServerStatus;
 
+console.log('✅ login.js تم تحميله بنجاح');
