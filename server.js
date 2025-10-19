@@ -700,6 +700,10 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
+app.get('/account.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+});
+
 // 🔥 تشغيل السيرفر
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Data Vision server running on port ${PORT}`);
