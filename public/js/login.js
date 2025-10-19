@@ -178,6 +178,7 @@ function showLoginForm() {
 }
 
 // معالجة تسجيل الدخول
+// معالجة تسجيل الدخول
 async function handleLogin(event) {
     event.preventDefault();
     
@@ -186,13 +187,12 @@ async function handleLogin(event) {
     
     if (!email || !password) {
         showNotification('يرجى ملء جميع الحقول', 'error');
-        return;
+        return false; // أضف return
     }
 
     try {
         showNotification('جاري تسجيل الدخول...', 'success');
         
-        // استخدام نظام المصادقة الجديد
         const result = await login(email, password);
         
         if (result.success) {
@@ -201,12 +201,13 @@ async function handleLogin(event) {
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 1000);
+            return true; // أضف return
         }
     } catch (error) {
         showNotification('خطأ في تسجيل الدخول: ' + error.message, 'error');
+        return false; // أضف return
     }
 }
-
 // معالجة إنشاء الحساب
 async function handleSignup(event) {
     event.preventDefault();
@@ -301,3 +302,4 @@ window.showLoginForm = showLoginForm;
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.isValidEmail = isValidEmail;
+
