@@ -1,4 +1,60 @@
-// login.js - معدل كامل
+// login.js - معدل كامل مع دوال API
+const API_BASE_URL = window.location.origin;
+
+// دوال API للاتصال بالسيرفر
+async function login(email, password) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // حفظ التوكن والمستخدم
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            return data;
+        } else {
+            throw new Error(data.error || 'فشل تسجيل الدخول');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        throw error;
+    }
+}
+
+async function register(name, email, password) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, email, password })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // حفظ التوكن والمستخدم
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            return data;
+        } else {
+            throw new Error(data.error || 'فشل إنشاء الحساب');
+        }
+    } catch (error) {
+        console.error('Register error:', error);
+        throw error;
+    }
+}
+
+// دوال المساعدة
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
     if (!notification) return;
@@ -82,6 +138,7 @@ function checkPasswordStrength(password) {
             document.getElementById('signupPassword').className = 'password-field';
         }
     } else if (strength <= 1) {
+        strengthFill.style.width = '20%';
         strengthFill.className += ' very-weak';
         strengthText.textContent = 'ضعيف جداً';
         if (strengthLevel) {
@@ -92,6 +149,7 @@ function checkPasswordStrength(password) {
             document.getElementById('signupPassword').className = 'password-field weak-password';
         }
     } else if (strength <= 2) {
+        strengthFill.style.width = '40%';
         strengthFill.className += ' weak';
         strengthText.textContent = 'ضعيف';
         if (strengthLevel) {
@@ -102,6 +160,7 @@ function checkPasswordStrength(password) {
             document.getElementById('signupPassword').className = 'password-field weak-password';
         }
     } else if (strength === 3) {
+        strengthFill.style.width = '60%';
         strengthFill.className += ' fair';
         strengthText.textContent = 'متوسط';
         if (strengthLevel) {
@@ -112,6 +171,7 @@ function checkPasswordStrength(password) {
             document.getElementById('signupPassword').className = 'password-field';
         }
     } else if (strength === 4) {
+        strengthFill.style.width = '80%';
         strengthFill.className += ' strong';
         strengthText.textContent = 'قوي';
         if (strengthLevel) {
@@ -122,6 +182,7 @@ function checkPasswordStrength(password) {
             document.getElementById('signupPassword').className = 'password-field strong-password';
         }
     } else {
+        strengthFill.style.width = '100%';
         strengthFill.className += ' very-strong';
         strengthText.textContent = 'قوي جداً';
         if (strengthLevel) {
@@ -178,7 +239,6 @@ function showLoginForm() {
 }
 
 // معالجة تسجيل الدخول
-// معالجة تسجيل الدخول
 async function handleLogin(event) {
     event.preventDefault();
     
@@ -187,7 +247,7 @@ async function handleLogin(event) {
     
     if (!email || !password) {
         showNotification('يرجى ملء جميع الحقول', 'error');
-        return false; // أضف return
+        return;
     }
 
     try {
@@ -201,13 +261,12 @@ async function handleLogin(event) {
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 1000);
-            return true; // أضف return
         }
     } catch (error) {
         showNotification('خطأ في تسجيل الدخول: ' + error.message, 'error');
-        return false; // أضف return
     }
 }
+
 // معالجة إنشاء الحساب
 async function handleSignup(event) {
     event.preventDefault();
@@ -234,15 +293,14 @@ async function handleSignup(event) {
         return;
     }
     
-    if (password.length < 8) {
-        showNotification('كلمة المرور يجب أن تكون 8 أحرف على الأقل', 'error');
+    if (password.length < 6) {
+        showNotification('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
         return;
     }
 
     try {
         showNotification('جاري إنشاء الحساب...', 'success');
         
-        // استخدام نظام التسجيل الجديد
         const result = await register(name, email, password);
         
         if (result.success) {
@@ -291,6 +349,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// فحص اتصال السيرفر
+async function checkServerStatus() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/health`);
+        const data = await response.json();
+        console.log('✅ السيرفر متصل:', data);
+        return true;
+    } catch (error) {
+        console.error('❌ السيرفر غير متصل:', error);
+        showNotification('لا يمكن الاتصال بالسيرفر', 'error');
+        return false;
+    }
+}
+
+// فحص السيرفر عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    checkServerStatus();
+});
 // جعل الدوال متاحة globally
 window.showNotification = showNotification;
 window.togglePasswordVisibility = togglePasswordVisibility;
@@ -302,4 +378,5 @@ window.showLoginForm = showLoginForm;
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.isValidEmail = isValidEmail;
-
+window.login = login;
+window.register = register;
