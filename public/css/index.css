@@ -1422,3 +1422,930 @@ body::before {
     background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
     transform: translateY(-2px);
 }
+
+
+
+/* أنماط خاصة لشريط التنقل */
+.nav-tabs .tab-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: transform 0.2s ease-in-out;
+    border: 1px solid var(--border);
+    background: rgba(243, 242, 248, 0.733);
+    color: var(--text);
+    backdrop-filter: blur(10px);
+}
+
+.nav-tabs .tab-btn:hover 
+
+/* أنماط خاصة بصفحة حسابي وزر المستخدم */
+.user-menu-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    font-size: clamp(14px, 2.5vw, 16px);
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: var(--glow);
+}
+
+.user-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: linear-gradient(135deg, var(--dark-700) 0%, var(--dark-600) 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 15px;
+    min-width: 200px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    display: none;
+    animation: slideDown 0.3s ease;
+}
+
+.user-dropdown.active {
+    display: block;
+}
+
+.user-info {
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+}
+
+.user-name {
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 5px;
+    font-size: clamp(14px, 2.5vw, 16px);
+}
+
+.user-email {
+    font-size: clamp(10px, 2vw, 12px);
+    color: #666;
+    word-break: break-all;
+}
+
+.user-menu-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-menu-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #333;
+    font-size: clamp(12px, 2.5vw, 14px);
+}
+
+.user-menu-item:hover {
+    background: rgba(91, 46, 222, 0.1);
+    color: var(--primary);
+}
+
+/* زر حسابي عائم */
+.floating-profile-btn {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: var(--glow), var(--shadow-lg);
+    z-index: 1000;
+    transition: all 0.3s ease;
+    border: 2px solid white;
+}
+
+.floating-profile-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(91, 46, 222, 0.8);
+}
+
+.floating-profile-btn:hover .profile-tooltip {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.profile-tooltip {
+    position: absolute;
+    right: 60px;
+    background: var(--dark-700);
+    color: var(--primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: clamp(12px, 2vw, 14px);
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+    border: 1px solid var(--primary);
+    pointer-events: none;
+}
+
+/* بطاقة معلومات المستخدم في الداشبورد */
+.user-info-card {
+    background: linear-gradient(135deg, var(--dark-700) 0%, var(--dark-600) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.user-info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+}
+
+.user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.user-info-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: clamp(16px, 3vw, 20px);
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.user-info-details h3 {
+    color: var(--primary);
+    margin-bottom: 5px;
+    font-size: clamp(16px, 3vw, 18px);
+    word-break: break-word;
+}
+
+.user-info-details p {
+    color: #666;
+    font-size: clamp(12px, 2vw, 14px);
+    word-break: break-all;
+}
+
+.user-info-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 100px), 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.user-stat {
+    text-align: center;
+    padding: 10px;
+    background: rgba(91, 46, 222, 0.1);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.user-stat-value {
+    font-size: clamp(16px, 3vw, 18px);
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+
+.user-stat-label {
+    font-size: clamp(10px, 2vw, 12px);
+    color: #666;
+}
+
+/* تحسينات للسكرول بار */
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--dark-800);
+}
+
+*::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+}
+
+.glow-text {
+    text-shadow: 0 0 10px rgba(91, 46, 222, 0.4);
+}
+
+/* أنيميشن للزر العائم */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.floating-profile-btn.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* تأثيرات خاصة للوضع الليلي */
+@media (prefers-color-scheme: dark) {
+    .user-menu-item {
+        color: #f0f0f0;
+    }
+    
+    .user-menu-item:hover {
+        background: rgba(91, 46, 222, 0.2);
+    }
+}
+
+/* ============ استجابة الشاشات ============ */
+
+/* شاشات كبيرة جداً */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1400px;
+    }
+    
+    .content {
+        padding: 30px;
+    }
+    
+    .header {
+        padding: 30px;
+    }
+}
+
+/* شاشات كبيرة */
+@media (min-width: 1024px) and (max-width: 1399px) {
+    .container {
+        max-width: 1200px;
+    }
+}
+
+/* تابلت */
+@media (max-width: 1023px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        border-radius: 12px;
+    }
+    
+    .header {
+        padding: 15px;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .header h1 {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .nav-tabs {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .content {
+        padding: 15px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+    
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .customers-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .customer-actions {
+        flex-direction: column;
+    }
+    
+    .customer-actions .btn {
+        width: 100%;
+    }
+    
+    .chat-container {
+        height: 250px;
+    }
+    
+    .filter-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .filter-actions .btn {
+        width: 100%;
+    }
+    
+    .sales-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .user-info-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* موبايل كبير */
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+    }
+    
+    .header {
+        padding: 12px;
+    }
+    
+    .header h1 {
+        font-size: 1.5rem;
+        gap: 8px;
+    }
+    
+    .nav-tabs {
+        padding: 5px;
+        gap: 3px;
+    }
+    
+    .tab-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .content {
+        padding: 12px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .stat-card {
+        padding: 15px 12px;
+    }
+    
+    .charts-container {
+        gap: 15px;
+    }
+    
+    .chart-box {
+        padding: 15px 12px;
+    }
+    
+    .modal {
+        padding: 10px;
+    }
+    
+    .modal-content {
+        padding: 15px;
+        max-height: 85vh;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 12px;
+    }
+    
+    .btn {
+        padding: 10px 16px;
+        width: 100%;
+    }
+    
+    .customer-card {
+        padding: 12px;
+    }
+    
+    .customer-name {
+        font-size: 16px;
+    }
+    
+    .chat-container {
+        height: 220px;
+        padding: 12px;
+    }
+    
+    .message-avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+    
+    .message-content {
+        padding: 10px 12px;
+    }
+    
+    .quick-actions {
+        gap: 6px;
+    }
+    
+    .quick-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .sales-filter {
+        padding: 12px;
+    }
+    
+    .filter-group label {
+        font-size: 12px;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+        padding: 8px 10px;
+    }
+    
+    .sales-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-card {
+        padding: 12px;
+    }
+    
+    .floating-profile-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+        top: 10px;
+        left: 10px;
+    }
+    
+    .profile-tooltip {
+        display: none;
+    }
+    
+    .user-info-card {
+        padding: 12px;
+    }
+    
+    .user-info-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .user-info-avatar {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .user-info-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .user-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+    
+    .user-dropdown {
+        right: auto;
+        left: 0;
+        min-width: 180px;
+    }
+}
+
+/* موبايل صغير */
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+    
+    .container {
+        border-radius: 8px;
+    }
+    
+    .header {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .header h1 {
+        font-size: 1.2rem;
+        gap: 5px;
+    }
+    
+    .nav-tabs {
+        padding: 4px;
+        gap: 2px;
+    }
+    
+    .tab-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+        border-radius: 6px;
+    }
+    
+    .content {
+        padding: 10px;
+    }
+    
+    .stats-grid {
+        gap: 10px;
+    }
+    
+    .stat-card {
+        padding: 12px 10px;
+        border-radius: 12px;
+    }
+    
+    .stat-card h3 {
+        font-size: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .stat-card .value {
+        font-size: 20px;
+    }
+    
+    .charts-container {
+        gap: 12px;
+    }
+    
+    .chart-box {
+        padding: 12px 10px;
+    }
+    
+    .chart-box h3 {
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+    
+    .modal-content {
+        padding: 12px;
+        border-radius: 15px;
+    }
+    
+    .modal-header {
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+    }
+    
+    .modal-header h2 {
+        font-size: 1rem;
+    }
+    
+    .close-btn {
+        font-size: 24px;
+        width: 25px;
+        height: 25px;
+    }
+    
+    .form-group {
+        margin-bottom: 10px;
+    }
+    
+    .form-group label {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        gap: 5px;
+    }
+    
+    .customer-card {
+        padding: 10px;
+        border-radius: 12px;
+    }
+    
+    .customer-name {
+        font-size: 14px;
+    }
+    
+    .customer-status {
+        padding: 4px 10px;
+        font-size: 10px;
+    }
+    
+    .customer-info {
+        font-size: 12px;
+        gap: 6px;
+    }
+    
+    .customer-actions {
+        gap: 6px;
+    }
+    
+    .chat-container {
+        height: 200px;
+        padding: 10px;
+        gap: 12px;
+    }
+    
+    .chat-message {
+        gap: 8px;
+        max-width: 98%;
+    }
+    
+    .message-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .message-content {
+        padding: 8px 10px;
+        border-radius: 12px;
+    }
+    
+    .message-text {
+        font-size: 12px;
+        line-height: 1.4;
+    }
+    
+    .message-time {
+        font-size: 9px;
+    }
+    
+    .quick-actions {
+        gap: 5px;
+    }
+    
+    .quick-btn {
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+    
+    .sales-filter {
+        padding: 10px;
+    }
+    
+    .filter-group label {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+        padding: 8px;
+        font-size: 13px;
+    }
+    
+    .filter-actions {
+        margin-top: 10px;
+    }
+    
+    .summary-card {
+        padding: 10px;
+    }
+    
+    .summary-card h4 {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+    
+    .summary-card .value {
+        font-size: 18px;
+    }
+    
+    .sale-item {
+        padding: 12px;
+        border-radius: 10px;
+    }
+    
+    .sale-amount {
+        font-size: 16px;
+    }
+    
+    .sale-date {
+        font-size: 11px;
+    }
+    
+    .settings-section {
+        padding: 12px 10px;
+    }
+    
+    .settings-section h3 {
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+    
+    .notification {
+        padding: 12px 16px;
+        font-size: 12px;
+        max-width: 95%;
+    }
+    
+    .page-title {
+        font-size: 1.2rem !important;
+        margin-bottom: 20px !important;
+        padding-bottom: 12px !important;
+    }
+    
+    .page-title::after {
+        width: 60px !important;
+        height: 2px !important;
+    }
+    
+    .page-title-box {
+        padding: 12px 15px !important;
+        margin-bottom: 20px !important;
+    }
+    
+    .page-title-box h2 {
+        font-size: 1rem !important;
+    }
+    
+    .floating-profile-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+        top: 8px;
+        left: 8px;
+    }
+    
+    .user-info-card {
+        padding: 10px;
+    }
+    
+    .user-info-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    .user-info-details h3 {
+        font-size: 14px;
+    }
+    
+    .user-info-details p {
+        font-size: 11px;
+    }
+    
+    .user-stat {
+        padding: 8px;
+    }
+    
+    .user-stat-value {
+        font-size: 14px;
+    }
+    
+    .user-stat-label {
+        font-size: 10px;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+    
+    .user-dropdown {
+        min-width: 160px;
+        padding: 12px;
+    }
+    
+    .user-name {
+        font-size: 13px;
+    }
+    
+    .user-email {
+        font-size: 10px;
+    }
+    
+    .user-menu-item {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+/* موبايل صغير جداً */
+@media (max-width: 360px) {
+    .header h1 {
+        font-size: 1rem;
+    }
+    
+    .tab-btn {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+    
+    .stat-card .value {
+        font-size: 18px;
+    }
+    
+    .chat-container {
+        height: 180px;
+    }
+    
+    .message-content {
+        padding: 6px 8px;
+    }
+    
+    .btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+}
+
+/* تحسينات للطباعة */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+    
+    .header,
+    .nav-tabs,
+    .btn,
+    .customer-actions,
+    .floating-profile-btn,
+    .notification {
+        display: none !important;
+    }
+    
+    .container {
+        box-shadow: none;
+        border: none;
+    }
+    
+    .stat-card,
+    .chart-box,
+    .customer-card {
+        break-inside: avoid;
+    }
+}
+
+/* تحسينات للأداء */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
