@@ -1,4 +1,4 @@
-// server.js - الإصدار المصلح
+// server.js - الإصلاح
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -19,16 +19,10 @@ const io = socketIo(server, {
 });
 const PORT = process.env.PORT || 10000;
 
-// 🔗 رابط الداتابيس
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-// 🔑 مفتاح التوقيع
+// 🔑 مفتاح التوقيع - يجب أن يكون في الأعلى
 const JWT_SECRET = process.env.JWT_SECRET || 'datavision-secret-key-2024';
 
-// 🔐 Middleware للتحقق من التوكن - يجب تعريفه قبل الاستخدام
+// 🔐 Middleware للتحقق من التوكن - يجب أن يكون في الأعلى جداً
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -45,6 +39,14 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+// 🔗 رابط الداتابيس
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
+
+// ... باقي الكود يبقى كما هو
 
 // 🔧 دالة تهيئة قاعدة البيانات
 async function initializeDatabase() {
