@@ -23,7 +23,7 @@
                 <button class="tab-btn" onclick="switchTab('whatsapp')">📱 واتساب</button>
                 <button class="tab-btn" onclick="switchTab('assistant')">🤖 المساعد الذكي</button>
                 <button class="tab-btn" onclick="switchTab('settings')">⚙️ الإعدادات</button>
-                 <button class="tab-btn" onclick="window.location.href='public/profile.html'">👤 حسابي</button>
+                 <button class="tab-btn" onclick="window.location.href='profile.html'">👤 حسابي</button>
             </div>
         </div>
 
@@ -342,5 +342,18 @@
     <script src="js/Customer-and-sales-management.js"></script>
     <script src="js/aI-integration.js"></script>
     <script src="js/user-menu.js"></script>
+    <script>
+// تحقق من تسجيل الدخول
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('datavision_token');
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+    // إذا كان مسجل دخول، استمر في التحميل
+    console.log('✅ المستخدم مسجل دخول');
+});
+</script>
 </body>
 </html>
+
