@@ -290,6 +290,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // إنشاء حساب جديد
+// إنشاء حساب جديد - معدل
 app.post('/api/auth/register', async (req, res) => {
     console.log('📝 محاولة تسجيل جديد:', req.body);
     
@@ -307,6 +308,15 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ 
                 success: false,
                 error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' 
+            });
+        }
+
+        // التحقق من صحة البريد الإلكتروني
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'صيغة البريد الإلكتروني غير صحيحة' 
             });
         }
 
@@ -329,8 +339,8 @@ app.post('/api/auth/register', async (req, res) => {
 
         // حفظ المستخدم
         const result = await pool.query(
-            `INSERT INTO users (name, email, password_hash, role) 
-             VALUES ($1, $2, $3, 'user') 
+            `INSERT INTO users (name, email, password_hash, role, status) 
+             VALUES ($1, $2, $3, 'user', 'active') 
              RETURNING id, name, email, role, created_at`,
             [name, email, passwordHash]
         );
@@ -353,13 +363,22 @@ app.post('/api/auth/register', async (req, res) => {
 
     } catch (error) {
         console.error('❌ خطأ في التسجيل:', error);
+        
+        // تحسين رسائل الخطأ
+        let errorMessage = 'خطأ في السيرفر';
+        if (error.code === '23505') {
+            errorMessage = 'البريد الإلكتروني مسجل مسبقاً';
+        } else if (error.code === '23502') {
+            errorMessage = 'بيانات ناقصة';
+        }
+        
         res.status(500).json({ 
             success: false,
-            error: 'خطأ في السيرفر: ' + error.message 
+            error: errorMessage,
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
-
 // 📊 إحصائيات المستخدم
 app.get('/api/user/stats', authenticateToken, async (req, res) => {
     try {
