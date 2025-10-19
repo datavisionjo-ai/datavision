@@ -1,4 +1,4 @@
-// server.js - الإصلاح
+// server.js - مع رابط الداتابيس المباشر
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -19,10 +19,13 @@ const io = socketIo(server, {
 });
 const PORT = process.env.PORT || 10000;
 
-// 🔑 مفتاح التوقيع - يجب أن يكون في الأعلى
-const JWT_SECRET = process.env.JWT_SECRET || 'datavision-secret-key-2024';
+// 🔗 رابط الداتابيس المباشر - ضع رابطك هنا
+const DATABASE_URL = "psql 'postgresql://neondb_owner:npg_bre3UJ8KxmRq@ep-floral-mud-agqi3f05-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'";
 
-// 🔐 Middleware للتحقق من التوكن - يجب أن يكون في الأعلى جداً
+// 🔑 مفتاح التوقيع
+const JWT_SECRET = "datavision-secret-key-2024";
+
+// 🔐 Middleware للتحقق من التوكن
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -40,10 +43,12 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// 🔗 رابط الداتابيس
+// 🔗 إعداد الداتابيس
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    connectionString: DATABASE_URL,
+    ssl: { 
+        rejectUnauthorized: false 
+    }
 });
 
 // ... باقي الكود يبقى كما هو
