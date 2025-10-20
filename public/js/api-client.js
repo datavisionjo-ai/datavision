@@ -6,6 +6,7 @@ let authToken = localStorage.getItem('datavision_token');
 let currentUser = JSON.parse(localStorage.getItem('datavision_user') || 'null');
 
 // دالة للطلبات العامة
+// في دالة apiRequest - أضف معالجة لأخطاء المصادقة
 async function apiRequest(endpoint, options = {}) {
     const url = `${API_BASE}${endpoint}`;
     const config = {
@@ -21,6 +22,12 @@ async function apiRequest(endpoint, options = {}) {
         const data = await response.json();
         
         if (!response.ok) {
+            // إذا كان الخطأ 401 (غير مصرح)، قم بتسجيل الخروج
+            if (response.status === 401) {
+                console.log('🔐 انتهت صلاحية الجلسة، تسجيل الخروج...');
+                logout();
+                throw new Error('انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى');
+            }
             throw new Error(data.error || 'خطأ في الشبكة');
         }
         
@@ -30,7 +37,6 @@ async function apiRequest(endpoint, options = {}) {
         throw error;
     }
 }
-
 // نظام المصادقة
 async function login(email, password) {
     try {
