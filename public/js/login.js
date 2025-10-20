@@ -1,4 +1,22 @@
-// login.js - معدل مع debugging
+
+// login.js - في الأعلى بعد API_BASE_URL
+
+// منع الدخول المزدوج - إذا كان مسجل دخول بالفعل
+function preventDoubleLogin() {
+    const token = localStorage.getItem('datavision_token');
+    const user = localStorage.getItem('datavision_user');
+    
+    if (token && user) {
+        console.log('✅ المستخدم مسجل دخول بالفعل، التوجيه للصفحة الرئيسية');
+        window.location.href = 'index.html';
+    }
+}
+
+// فحص عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    preventDoubleLogin();
+    // ... باقي الكود الحالي
+});// login.js - معدل مع debugging
 const API_BASE_URL = "https://datavision-nilx.onrender.com";
 console.log('🔗 API Base URL:', API_BASE_URL);
 
@@ -405,5 +423,6 @@ window.register = register;
 window.checkServerStatus = checkServerStatus;
 
 console.log('✅ login.js تم تحميله بنجاح');
+
 
 
