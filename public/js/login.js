@@ -21,6 +21,7 @@ const API_BASE_URL = "https://datavision-nilx.onrender.com";
 console.log('🔗 API Base URL:', API_BASE_URL);
 
 // دوال API للاتصال بالسيرفر
+// login.js - تحديث دوال login و register
 async function login(email, password) {
     try {
         console.log('🔐 محاولة تسجيل دخول:', { email });
@@ -39,9 +40,9 @@ async function login(email, password) {
         console.log('📊 بيانات الاستجابة:', data);
         
         if (data.success) {
-            // حفظ التوكن والمستخدم
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
+            // حفظ التوكن والمستخدم بنفس المفاتيح التي يستخدمها api-client.js
+            localStorage.setItem('datavision_token', data.token);
+            localStorage.setItem('datavision_user', JSON.stringify(data.user));
             return data;
         } else {
             throw new Error(data.error || 'فشل تسجيل الدخول');
@@ -65,32 +66,20 @@ async function register(name, email, password) {
         });
 
         console.log('📡 استجابة إنشاء الحساب:', response.status);
-        console.log('📡 حالة الاستجابة:', response.ok);
         
-        // الحصول على نص الاستجابة لأي حالة
-        const responseText = await response.text();
-        console.log('📄 نص الاستجابة:', responseText);
-        
-        let data;
-        try {
-            data = JSON.parse(responseText);
-        } catch (e) {
-            console.error('❌ خطأ في تحويل JSON:', e);
-            throw new Error(`استجابة غير صالحة من السيرفر: ${responseText}`);
-        }
-        
+        const data = await response.json();
         console.log('📊 بيانات الاستجابة:', data);
         
         if (data.success) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
+            // حفظ التوكن والمستخدم بنفس المفاتيح التي يستخدمها api-client.js
+            localStorage.setItem('datavision_token', data.token);
+            localStorage.setItem('datavision_user', JSON.stringify(data.user));
             return data;
         } else {
             throw new Error(data.error || 'فشل إنشاء الحساب');
         }
     } catch (error) {
         console.error('❌ خطأ في إنشاء الحساب:', error);
-        console.error('🔍 تفاصيل الخطأ:', error.message);
         throw error;
     }
 }
@@ -423,6 +412,7 @@ window.register = register;
 window.checkServerStatus = checkServerStatus;
 
 console.log('✅ login.js تم تحميله بنجاح');
+
 
 
 
