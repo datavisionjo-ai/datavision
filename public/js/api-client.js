@@ -199,7 +199,22 @@ function isLoggedIn() {
 function getCurrentUser() {
     return currentUser;
 }
+// api-client.js - إضافة دالة فحص الحالة
+function checkAuthStatus() {
+    const token = localStorage.getItem('datavision_token');
+    const user = localStorage.getItem('datavision_user');
+    
+    console.log('🔍 فحص حالة المصادقة:', {
+        tokenExists: !!token,
+        userExists: !!user,
+        currentUser: currentUser ? currentUser.email : 'null'
+    });
+    
+    return !!token && !!user && !!currentUser;
+}
 
+// جعل الدالة متاحة
+window.checkAuthStatus = checkAuthStatus;
 // جعل الدوال متاحة globally
 window.login = login;
 window.register = register;
