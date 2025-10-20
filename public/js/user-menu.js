@@ -1,14 +1,36 @@
 // user-menu.js - إدارة قائمة المستخدم وبياناته
 // user-menu.js - إدارة قائمة المستخدم وبياناته
+// user-menu.js - تحديث constructor
 class UserMenuManager {
     constructor() {
+        console.log('🔄 محاولة تهيئة UserMenuManager...');
+        
         // فحص المصادقة أولاً
-        if (!checkAuthentication()) {
-            console.log('⏳ لم يتم المصادقة، تأجيل التهيئة...');
-            return;
+        if (typeof checkAuthentication === 'function') {
+            if (!checkAuthentication()) {
+                console.log('⏳ لم يتم المصادقة، تأجيل التهيئة...');
+                return;
+            }
+        } else {
+            console.log('⚠️ checkAuthentication غير محمل، المتابعة بدون فحص...');
         }
+        
         this.init();
     }
+
+    init() {
+        try {
+            console.log('🚀 بدء تهيئة قائمة المستخدم...');
+            this.updateUserInfo();
+            this.setupEventListeners();
+            this.showWelcomeEffect();
+        } catch (error) {
+            console.error('❌ خطأ في تهيئة قائمة المستخدم:', error);
+        }
+    }
+
+    // ... باقي الكود بدون تغيير
+
 
     // ... باقي الكود كما هو
 }
