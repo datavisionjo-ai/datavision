@@ -1,8 +1,17 @@
 // user-menu.js - إدارة قائمة المستخدم وبياناته
+// user-menu.js - إدارة قائمة المستخدم وبياناته
 class UserMenuManager {
     constructor() {
+        // فحص المصادقة أولاً
+        if (!checkAuthentication()) {
+            console.log('⏳ لم يتم المصادقة، تأجيل التهيئة...');
+            return;
+        }
         this.init();
     }
+
+    // ... باقي الكود كما هو
+}
 
     init() {
         this.updateUserInfo();
