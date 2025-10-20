@@ -47,27 +47,48 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // تهيئة بيانات المستخدم بعد التأكد من المصادقة
+// auth.js - تحديث دالة initializeUserData
 function initializeUserData() {
     console.log('🔄 تهيئة بيانات المستخدم...');
     
-    // انتظر حتى يتم تحميل api-client.js و user-menu.js
-    setTimeout(() => {
-        if (typeof getCurrentUser === 'function' && typeof updateUserInfo === 'function') {
+    // محاولات متعددة لضمان تحميل جميع الملفات
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    const tryInitialize = () => {
+        attempts++;
+        console.log(`🔄 محاولة التهيئة ${attempts}/${maxAttempts}`);
+        
+        if (typeof getCurrentUser === 'function') {
             const user = getCurrentUser();
             if (user) {
                 console.log('👤 بيانات المستخدم المحملة:', user.name);
+                
                 // إذا كان userMenuManager موجود، قم بتحديث البيانات
                 if (typeof userMenuManager !== 'undefined' && userMenuManager.updateUserInfo) {
                     userMenuManager.updateUserInfo();
+                } else {
+                    console.log('⚠️ userMenuManager غير جاهز بعد');
+                    // إنشاء instance جديد إذا لم يكن موجود
+                    if (typeof UserMenuManager !== 'undefined') {
+                        window.userMenuManager = new UserMenuManager();
+                    }
                 }
+            } else {
+                console.log('❌ لا توجد بيانات مستخدم');
             }
         } else {
-            console.log('⚠️ الدوال غير محملة بعد، إعادة المحاولة...');
-            initializeUserData(); // إعادة المحاولة
+            console.log('⚠️ getCurrentUser غير محمل بعد');
+            if (attempts < maxAttempts) {
+                setTimeout(tryInitialize, 500);
+            } else {
+                console.error('❌ فشل في تحميل بيانات المستخدم بعد عدة محاولات');
+            }
         }
-    }, 100);
+    };
+    
+    tryInitialize();
 }
-
 // تسجيل الخروج
 function logout() {
     if (confirm('هل تريد تسجيل الخروج؟')) {
