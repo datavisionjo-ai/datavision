@@ -354,8 +354,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // إذا كان مسجل دخول، استمر في التحميل
     console.log('✅ المستخدم مسجل دخول');
 });
+        console.log('🏠 صفحة index.html محملة');
+console.log('🔐 حالة التوكن:', {
+    datavision_token: !!localStorage.getItem('datavision_token'),
+    datavision_user: !!localStorage.getItem('datavision_user'),
+    token: !!localStorage.getItem('token'),
+    user: !!localStorage.getItem('user')
 </script>
 </body>
 </html>
+
 
 
