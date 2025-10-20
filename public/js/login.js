@@ -1,5 +1,5 @@
 // login.js - معدل مع debugging
-const API_BASE_URL = https://datavision-nilx.onrender.com;
+const API_BASE_URL = "https://datavision-nilx.onrender.com";
 console.log('🔗 API Base URL:', API_BASE_URL);
 
 // دوال API للاتصال بالسيرفر
@@ -394,3 +394,4 @@ window.register = register;
 window.checkServerStatus = checkServerStatus;
 
 console.log('✅ login.js تم تحميله بنجاح');
+
