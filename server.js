@@ -20,8 +20,16 @@ const io = socketIo(server, {
 const PORT = process.env.PORT || 10000;
 
 // 🔗 رابط الداتابيس المباشر - ضع رابطك هنا
+// 🔗 رابط الداتابيس المباشر - معدل
 const DATABASE_URL = "psql 'postgresql://neondb_owner:npg_bre3UJ8KxmRq@ep-floral-mud-agqi3f05-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'";
 
+// 🔗 إعداد الداتابيس - معدل
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || DATABASE_URL,
+    ssl: { 
+        rejectUnauthorized: false 
+    }
+});
 // 🔑 مفتاح التوقيع
 const JWT_SECRET = "datavision-secret-key-2024";
 
