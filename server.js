@@ -1,4 +1,4 @@
-// server.js - مع رابط الداتابيس المباشر
+// server.js - كامل ومصحح
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -19,19 +19,19 @@ const io = socketIo(server, {
 });
 const PORT = process.env.PORT || 10000;
 
-// 🔗 رابط الداتابيس المباشر - ضع رابطك هنا
 // 🔗 رابط الداتابيس المباشر - معدل
-const DATABASE_URL = "psql 'postgresql://neondb_owner:npg_bre3UJ8KxmRq@ep-floral-mud-agqi3f05-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'";
+const DATABASE_URL = "postgresql://neondb_owner:npg_bre3UJ8KxmRq@ep-floral-mud-agqi3f05-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require";
 
-// 🔗 إعداد الداتابيس - معدل
+// 🔑 مفتاح التوقيع
+const JWT_SECRET = "datavision-secret-key-2024";
+
+// 🔗 إعداد الداتابيس - مرة واحدة فقط
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || DATABASE_URL,
     ssl: { 
         rejectUnauthorized: false 
     }
 });
-// 🔑 مفتاح التوقيع
-const JWT_SECRET = "datavision-secret-key-2024";
 
 // 🔐 Middleware للتحقق من التوكن
 const authenticateToken = (req, res, next) => {
@@ -51,31 +51,21 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// 🔗 إعداد الداتابيس
-const pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: { 
-        rejectUnauthorized: false 
-    }
-});
-
-// فحص الاتصال بقاعدة البيانات
+// فحص الاتصال بقاعدة البيانات - معدل
 async function testConnection() {
     try {
         const client = await pool.connect();
+        const result = await client.query('SELECT NOW() as time');
         console.log('✅ تم الاتصال بقاعدة البيانات بنجاح');
+        console.log('🕒 وقت قاعدة البيانات:', result.rows[0].time);
         client.release();
         return true;
     } catch (error) {
         console.error('❌ فشل الاتصال بقاعدة البيانات:', error.message);
+        console.error('🔍 تفاصيل الخطأ:', error);
         return false;
     }
 }
-
-// فحص الاتصال عند بدء التشغيل
-testConnection();
-
-// ... باقي الكود يبقى كما هو
 
 // 🔧 دالة تهيئة قاعدة البيانات
 async function initializeDatabase() {
@@ -154,9 +144,6 @@ async function initializeDatabase() {
     }
 }
 
-// 🔥 تشغيل التهيئة
-initializeDatabase();
-
 // 👥 مستخدمين متصلين
 const onlineUsers = new Map();
 
@@ -194,12 +181,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 📝 تسجيل الطلبات
-// 🔧 إصلاح CORS - أضف هذا في server.js
+// 🔧 إصلاح CORS الشامل
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin, X-Requested-With, Accept');
     
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -207,9 +193,23 @@ app.use((req, res, next) => {
     next();
 });
 
+// 🛠️ معالجة الأخطاء غير المتوقعة
+app.use((error, req, res, next) => {
+    console.error('🛑 خطأ غير متوقع:', error);
+    res.status(500).json({
+        success: false,
+        error: 'خطأ داخلي في السيرفر',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+});
+
 // 🏥 فحص الصحة
 app.get('/health', (req, res) => {
-    res.json({ status: 'OK', message: 'سيرفر Data Vision شغال' });
+    res.json({ 
+        status: 'OK', 
+        message: 'سيرفر Data Vision شغال',
+        timestamp: new Date().toISOString()
+    });
 });
 
 // 🧪 فحص الاتصال بقاعدة البيانات
@@ -320,11 +320,11 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// إنشاء حساب جديد
-// إنشاء حساب جديد - معدل
+// إنشاء حساب جديد - معدل مع معالجة أفضل للأخطاء
 app.post('/api/auth/register', async (req, res) => {
     console.log('📝 محاولة تسجيل جديد:', req.body);
     
+    let client;
     try {
         const { name, email, password } = req.body;
         
@@ -342,17 +342,11 @@ app.post('/api/auth/register', async (req, res) => {
             });
         }
 
-        // التحقق من صحة البريد الإلكتروني
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'صيغة البريد الإلكتروني غير صحيحة' 
-            });
-        }
-
+        // الحصول على اتصال من الـ pool
+        client = await pool.connect();
+        
         // التحقق من وجود المستخدم
-        const userCheck = await pool.query(
+        const userCheck = await client.query(
             'SELECT id FROM users WHERE email = $1', 
             [email]
         );
@@ -369,7 +363,7 @@ app.post('/api/auth/register', async (req, res) => {
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
         // حفظ المستخدم
-        const result = await pool.query(
+        const result = await client.query(
             `INSERT INTO users (name, email, password_hash, role, status) 
              VALUES ($1, $2, $3, 'user', 'active') 
              RETURNING id, name, email, role, created_at`,
@@ -395,12 +389,14 @@ app.post('/api/auth/register', async (req, res) => {
     } catch (error) {
         console.error('❌ خطأ في التسجيل:', error);
         
-        // تحسين رسائل الخطأ
+        // رسائل خطأ محددة
         let errorMessage = 'خطأ في السيرفر';
         if (error.code === '23505') {
             errorMessage = 'البريد الإلكتروني مسجل مسبقاً';
         } else if (error.code === '23502') {
             errorMessage = 'بيانات ناقصة';
+        } else if (error.code === '28P01') {
+            errorMessage = 'خطأ في الاتصال بقاعدة البيانات';
         }
         
         res.status(500).json({ 
@@ -408,8 +404,14 @@ app.post('/api/auth/register', async (req, res) => {
             error: errorMessage,
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
+    } finally {
+        // تحرير الاتصال
+        if (client) {
+            client.release();
+        }
     }
 });
+
 // 📊 إحصائيات المستخدم
 app.get('/api/user/stats', authenticateToken, async (req, res) => {
     try {
@@ -483,7 +485,6 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
         const userId = req.user.userId;
         const { name, email, currentPassword, newPassword } = req.body;
 
-        // التحقق من كلمة المرور إذا كانت هناك محاولة لتغييرها
         if (newPassword) {
             const userCheck = await pool.query(
                 'SELECT password_hash FROM users WHERE id = $1',
@@ -495,7 +496,6 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
                 return res.status(401).json({ error: 'كلمة المرور الحالية غير صحيحة' });
             }
 
-            // تشفير كلمة المرور الجديدة
             const saltRounds = 10;
             const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
             
@@ -505,7 +505,6 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
             );
         }
 
-        // تحديث البيانات الأساسية
         await pool.query(
             'UPDATE users SET name = $1, email = $2 WHERE id = $3',
             [name, email, userId]
@@ -526,7 +525,6 @@ app.get('/api/users/employees', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
         
-        // التحقق من الصلاحيات
         const userCheck = await pool.query(
             'SELECT role FROM users WHERE id = $1',
             [userId]
@@ -559,7 +557,6 @@ app.post('/api/users/employees', authenticateToken, async (req, res) => {
         const userId = req.user.userId;
         const { name, email, password, position, role, permissions } = req.body;
 
-        // التحقق من الصلاحيات
         const userCheck = await pool.query(
             'SELECT role FROM users WHERE id = $1',
             [userId]
@@ -569,7 +566,6 @@ app.post('/api/users/employees', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'ليس لديك صلاحية لإضافة موظفين' });
         }
 
-        // التحقق من وجود البريد الإلكتروني
         const emailCheck = await pool.query(
             'SELECT id FROM users WHERE email = $1',
             [email]
@@ -579,11 +575,9 @@ app.post('/api/users/employees', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'البريد الإلكتروني مسجل مسبقاً' });
         }
 
-        // تشفير كلمة المرور
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
-        // إضافة الموظف
         const result = await pool.query(
             `INSERT INTO users (name, email, password_hash, role, position, created_by) 
              VALUES ($1, $2, $3, $4, $5, $6) 
@@ -759,10 +753,14 @@ app.get('/account.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'profile.html'));
 });
 
+// 🔥 تشغيل التهيئة وفحص الاتصال
+initializeDatabase();
+testConnection();
+
 // 🔥 تشغيل السيرفر
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Data Vision server running on port ${PORT}`);
-    console.log(`🌐 Live at: https://your-app.onrender.com`);
+    console.log(`🌐 Live at: https://datavision-nilx.onrender.com`);
     console.log(`📊 Connected to: Neon PostgreSQL Database`);
     console.log(`🔌 Socket.IO ready for real-time updates`);
 });
