@@ -47,12 +47,23 @@ async function register(name, email, password) {
         });
 
         console.log('📡 استجابة إنشاء الحساب:', response.status);
+        console.log('📡 حالة الاستجابة:', response.ok);
         
-        const data = await response.json();
+        // الحصول على نص الاستجابة لأي حالة
+        const responseText = await response.text();
+        console.log('📄 نص الاستجابة:', responseText);
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            console.error('❌ خطأ في تحويل JSON:', e);
+            throw new Error(`استجابة غير صالحة من السيرفر: ${responseText}`);
+        }
+        
         console.log('📊 بيانات الاستجابة:', data);
         
         if (data.success) {
-            // حفظ التوكن والمستخدم
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             return data;
@@ -61,10 +72,10 @@ async function register(name, email, password) {
         }
     } catch (error) {
         console.error('❌ خطأ في إنشاء الحساب:', error);
+        console.error('🔍 تفاصيل الخطأ:', error.message);
         throw error;
     }
 }
-
 // دوال المساعدة
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
@@ -394,4 +405,5 @@ window.register = register;
 window.checkServerStatus = checkServerStatus;
 
 console.log('✅ login.js تم تحميله بنجاح');
+
 
