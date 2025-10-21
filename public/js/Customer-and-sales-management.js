@@ -1,4 +1,5 @@
-// Customer-and-sales-management.js - معدل كامل
+// Customer-and-sales-management.js - معدل كامل مع التحليلات
+
 function renderCustomers() {
     const container = document.getElementById('customersList');
     if (!container) {
@@ -27,6 +28,7 @@ function renderCustomers() {
                     <div class="customer-info">
                         <div>📱 ${customer.phone || 'لا يوجد رقم'}</div>
                         ${customer.email ? `<div>📧 ${customer.email}</div>` : ''}
+                        <div>📍 ${customer.governorate || 'غير محدد'}</div>
                         ${customer.notes ? `<div>📝 ${customer.notes}</div>` : ''}
                     </div>
                 </div>
@@ -108,6 +110,7 @@ function openAddCustomerModal() {
     document.getElementById('customerName').value = '';
     document.getElementById('customerPhone').value = '';
     document.getElementById('customerEmail').value = '';
+    document.getElementById('customerGovernorate').value = '';
     document.getElementById('customerStatus').value = 'active';
     document.getElementById('customerNotes').value = '';
     document.getElementById('customerModal').classList.add('active');
@@ -122,6 +125,7 @@ function editCustomer(id) {
     document.getElementById('customerName').value = customer.name;
     document.getElementById('customerPhone').value = customer.phone;
     document.getElementById('customerEmail').value = customer.email || '';
+    document.getElementById('customerGovernorate').value = customer.governorate || '';
     document.getElementById('customerStatus').value = customer.status;
     document.getElementById('customerNotes').value = customer.notes || '';
     document.getElementById('customerModal').classList.add('active');
@@ -135,6 +139,7 @@ function saveCustomer(e) {
         name: document.getElementById('customerName').value,
         phone: document.getElementById('customerPhone').value,
         email: document.getElementById('customerEmail').value,
+        governorate: document.getElementById('customerGovernorate').value,
         status: document.getElementById('customerStatus').value,
         notes: document.getElementById('customerNotes').value,
         createdAt: new Date().toISOString()
@@ -153,6 +158,8 @@ function saveCustomer(e) {
     renderCustomers();
     updateDashboard();
     updateCharts();
+    updateGovernorateAnalysis();
+    updateAdvancedAnalytics();
     closeModal('customerModal');
 }
 
@@ -167,6 +174,8 @@ function deleteCustomer(id) {
     renderSales();
     updateDashboard();
     updateCharts();
+    updateGovernorateAnalysis();
+    updateAdvancedAnalytics();
     showNotification('تم حذف العميل بنجاح!', 'success');
 }
 
@@ -196,6 +205,8 @@ function saveSale(e) {
     renderCustomers();
     updateDashboard();
     updateCharts();
+    updateGovernorateAnalysis();
+    updateAdvancedAnalytics();
     closeModal('saleModal');
     showNotification('تم إضافة عملية البيع بنجاح!', 'success');
 }
@@ -263,6 +274,134 @@ function getCustomerPurchases(customerId) {
     };
 }
 
+// دالة تحديث تحليل المحافظات
+function updateGovernorateAnalysis() {
+    const governorateStats = document.getElementById('governorateStats');
+    if (!governorateStats) return;
+
+    // تجميع البيانات حسب المحافظات
+    const governorateData = {};
+    
+    customers.forEach(customer => {
+        const gov = customer.governorate || 'غير محدد';
+        if (!governorateData[gov]) {
+            governorateData[gov] = {
+                customers: 0,
+                activeCustomers: 0,
+                sales: 0,
+                totalSales: 0
+            };
+        }
+        
+        governorateData[gov].customers++;
+        if (customer.status === 'active') {
+            governorateData[gov].activeCustomers++;
+        }
+    });
+
+    // حساب المبيعات لكل محافظة
+    sales.forEach(sale => {
+        const customer = customers.find(c => c.id === (sale.customerId || sale.customer_id));
+        if (customer) {
+            const gov = customer.governorate || 'غير محدد';
+            if (governorateData[gov]) {
+                governorateData[gov].sales++;
+                governorateData[gov].totalSales += parseFloat(sale.amount || 0);
+            }
+        }
+    });
+
+    // عرض البيانات
+    governorateStats.innerHTML = '';
+    
+    const sortedGovernorates = Object.entries(governorateData)
+        .sort((a, b) => b[1].customers - a[1].customers);
+
+    sortedGovernorates.forEach(([gov, data]) => {
+        const card = document.createElement('div');
+        card.className = 'stat-card';
+        card.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        card.style.color = 'white';
+        card.innerHTML = `
+            <h3 style="color: white; margin-bottom: 15px;">📍 ${gov}</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>👥 العملاء:</span>
+                    <strong>${data.customers}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>✅ النشطين:</span>
+                    <strong>${data.activeCustomers}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>💰 المبيعات:</span>
+                    <strong>${data.sales}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    <span>💵 الإجمالي:</span>
+                    <strong>${data.totalSales.toFixed(2)} د.أ</strong>
+                </div>
+            </div>
+        `;
+        governorateStats.appendChild(card);
+    });
+}
+
+// دالة تحديث التحليلات المتقدمة
+function updateAdvancedAnalytics() {
+    // حساب أعلى محافظة مبيعاً
+    const salesByGovernorate = {};
+    sales.forEach(sale => {
+        const customer = customers.find(c => c.id === (sale.customerId || sale.customer_id));
+        if (customer) {
+            const gov = customer.governorate || 'غير محدد';
+            if (!salesByGovernorate[gov]) {
+                salesByGovernorate[gov] = 0;
+            }
+            salesByGovernorate[gov] += parseFloat(sale.amount || 0);
+        }
+    });
+
+    const topSalesGov = Object.entries(salesByGovernorate)
+        .sort((a, b) => b[1] - a[1])[0];
+
+    if (topSalesGov) {
+        document.getElementById('topSalesGovernorate').textContent = topSalesGov[0];
+        document.getElementById('topSalesAmount').textContent = `${topSalesGov[1].toFixed(2)} دينار`;
+    } else {
+        document.getElementById('topSalesGovernorate').textContent = 'لا توجد بيانات';
+        document.getElementById('topSalesAmount').textContent = '-';
+    }
+
+    // حساب أكثر محافظة عملاء
+    const customersByGovernorate = {};
+    customers.forEach(customer => {
+        const gov = customer.governorate || 'غير محدد';
+        customersByGovernorate[gov] = (customersByGovernorate[gov] || 0) + 1;
+    });
+
+    const topCustomersGov = Object.entries(customersByGovernorate)
+        .sort((a, b) => b[1] - a[1])[0];
+
+    if (topCustomersGov) {
+        document.getElementById('topCustomersGovernorate').textContent = topCustomersGov[0];
+        document.getElementById('topCustomersCount').textContent = `${topCustomersGov[1]} عميل`;
+    } else {
+        document.getElementById('topCustomersGovernorate').textContent = 'لا توجد بيانات';
+        document.getElementById('topCustomersCount').textContent = '-';
+    }
+
+    // حساب متوسط قيمة العميل
+    const totalSales = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+    const avgValue = customers.length > 0 ? totalSales / customers.length : 0;
+    document.getElementById('avgCustomerValue').textContent = `${avgValue.toFixed(2)} د.أ`;
+
+    // حساب معدل النشاط
+    const activeCount = customers.filter(c => c.status === 'active').length;
+    const activityRate = customers.length > 0 ? (activeCount / customers.length * 100) : 0;
+    document.getElementById('activityRate').textContent = `${activityRate.toFixed(1)}%`;
+}
+
 function addMessageToChat(message, sender) {
     const chatContainer = document.getElementById('chatContainer');
     if (!chatContainer) return;
@@ -302,3 +441,5 @@ window.saveSale = saveSale;
 window.renderSales = renderSales;
 window.addMessageToChat = addMessageToChat;
 window.handleKeyPress = handleKeyPress;
+window.updateGovernorateAnalysis = updateGovernorateAnalysis;
+window.updateAdvancedAnalytics = updateAdvancedAnalytics;
