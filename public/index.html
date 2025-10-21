@@ -13,7 +13,7 @@
     <div class="container">
         <div class="header">
             <div style="display: flex; align-items: center; gap: 20px; justify-content: center; margin-bottom: 10px;">
-                <img src="../logo.png" alt="Data Vision Logo" style="width: 100px; height: 100px;">
+                <img src="images/logo.png" alt="Data Vision Logo" style="width: 100px; height: 100px;">
                 <h1 style="margin: 0;">Data Vision</h1>
             </div>
             <div class="nav-tabs">
@@ -216,8 +216,15 @@
             <div id="settings" class="tab-content">
                 <h2 class="page-title-black">الإعدادات</h2>
                 
-                
-                    
+                <!-- قسم استيراد وتصدير البيانات -->
+                <div class="settings-section">
+                    <h3>📁 استيراد وتصدير البيانات</h3>
+                    <div class="button-group" style="display: flex; gap: 10px; flex-wrap: wrap;">
+<button class="btn btn-success" onclick="exportData()">📄 تصدير JSON</button>
+<button class="btn btn-warning" onclick="document.getElementById('importJson').click()">
+    📄 استيراد JSON
+</button>
+                    </div>
                 </div>
 
                 <!-- قسم إدارة البيانات الأساسية -->
@@ -414,4 +421,7 @@
 
 </body>
 </html>
+
+
+
 
