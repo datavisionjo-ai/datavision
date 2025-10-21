@@ -2572,3 +2572,22 @@ body::before {
     background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
     transform: translateY(-1px);
 }
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.chart-container {
+    background: var(--dark-600);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    position: relative;
+}
+
+.chart-container canvas {
+    max-height: 300px;
+}
+
