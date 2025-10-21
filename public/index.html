@@ -213,27 +213,20 @@
             </div>
 
             <!-- قسم الإعدادات -->
-      <!-- قسم استيراد وتصدير البيانات -->
-<div class="settings-section">
-    <h3>📁 استيراد وتصدير البيانات</h3>
-    <div class="button-group" style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <button onclick="exportToExcel()" class="btn btn-success">
-            📊 تصدير Excel كامل
-        </button>
-        <button onclick="exportCustomersExcel()" class="btn btn-primary">
-            👥 تصدير العملاء فقط
-        </button>
-        <button onclick="exportSalesExcel()" class="btn btn-info">
-            💰 تصدير المبيعات فقط
-        </button>
-        <button onclick="openImportModal()" class="btn btn-warning">
-            📥 استيراد بيانات
-        </button>
-    </div>
-    <div style="margin-top: 10px; font-size: 12px; color: #666;">
-        💡 الملفات ستُحمّل تلقائياً بصيغة Excel متعددة الأوراق
-    </div>
-</div>
+            <div id="settings" class="tab-content">
+                <h2 class="page-title-black">الإعدادات</h2>
+                
+                <!-- قسم استيراد وتصدير البيانات -->
+                <div class="settings-section">
+                    <h3>📁 استيراد وتصدير البيانات</h3>
+                    <div class="button-group" style="display: flex; gap: 10px; flex-wrap: wrap;">
+<button class="btn btn-success" onclick="exportData()">📄 تصدير JSON</button>
+<button class="btn btn-warning" onclick="document.getElementById('importJson').click()">
+    📄 استيراد JSON
+</button>
+                    </div>
+                </div>
+
                 <!-- قسم إدارة البيانات الأساسية -->
                 <div class="settings-section">
                     <h3>🛠️ إدارة البيانات الأساسية</h3>
@@ -423,13 +416,11 @@
     <script src="js/sales-manager.js"></script>
     <script src="js/app.js"></script>
     <script src="js/aI-integration.js"></script>
-    <script src="js/excel-export.js"></script>
+    <script src="js/import-export.js"></script>
     <script src="js/charts-fix.js"></script>
 
 </body>
 </html>
-
-
 
 
 
