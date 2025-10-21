@@ -1,9 +1,18 @@
-// aI-integration.js - النظام الذكي المتكامل مع 500+ سؤال
+// aI-integration.js - النظام الذكي المتكامل مع 500+ سؤال - معدل
 class AdvancedAIAssistant {
     constructor() {
         this.responses = this.initializeResponses();
-        this.setupEventListeners();
+        this.currentData = {
+            customers: [],
+            sales: []
+        };
         console.log('🧠 المساعد المتقدم جاهز - يدعم 500+ سؤال!');
+        
+        // تهيئة فورية عند الإنشاء
+        setTimeout(() => {
+            this.setupEventListeners();
+            this.addWelcomeMessage();
+        }, 1000);
     }
 
     initializeResponses() {
@@ -102,18 +111,54 @@ class AdvancedAIAssistant {
     }
 
     setupEventListeners() {
-        // ربط زر الإرسال
-        const sendBtn = document.querySelector('#assistant .btn-primary');
-        const inputField = document.getElementById('assistantInput');
+        console.log('🔧 جاري إعداد مستمعي الأحداث...');
         
-        if (sendBtn) sendBtn.onclick = () => this.sendMessage();
-        if (inputField) inputField.onkeypress = (e) => e.key === 'Enter' && this.sendMessage();
+        // ربط زر الإرسال - طريقة أكثر قوة
+        setTimeout(() => {
+            const sendBtn = document.querySelector('#assistant .btn-primary');
+            const inputField = document.getElementById('assistantInput');
+            
+            console.log('🔍 عناصر الواجهة:', {
+                sendBtn: !!sendBtn,
+                inputField: !!inputField,
+                chatContainer: !!document.getElementById('chatContainer')
+            });
 
-        // أزرار سريعة
-        this.setupQuickActions();
-        
-        // تحديث الردود عند تغيير البيانات
-        this.setupDataListeners();
+            if (sendBtn) {
+                sendBtn.onclick = () => {
+                    console.log('🖱️ تم النقر على زر الإرسال');
+                    this.sendMessage();
+                };
+            } else {
+                console.error('❌ لم يتم العثور على زر الإرسال');
+                // محاولة بديلة
+                this.setupAlternativeEvents();
+            }
+            
+            if (inputField) {
+                inputField.onkeypress = (e) => {
+                    if (e.key === 'Enter') {
+                        console.log('⌨️ تم الضغط على Enter');
+                        this.sendMessage();
+                    }
+                };
+            }
+
+            // أزرار سريعة
+            this.setupQuickActions();
+            
+        }, 500);
+    }
+
+    setupAlternativeEvents() {
+        // طريقة بديلة لربط الأحداث
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-primary') && 
+                e.target.closest('#assistant')) {
+                console.log('🎯 تم النقر على زر الإرسال (الطريقة البديلة)');
+                this.sendMessage();
+            }
+        });
     }
 
     setupQuickActions() {
@@ -124,52 +169,88 @@ class AdvancedAIAssistant {
             'تقرير شامل': 'تقرير أداء شامل'
         };
 
-        Object.entries(quickActions).forEach(([text, response]) => {
-            const btn = document.querySelector(`.quick-btn[onclick*="${text}"]`);
-            if (btn) {
-                btn.onclick = () => {
-                    document.getElementById('assistantInput').value = text;
-                    this.sendMessage();
-                };
-            }
+        Object.entries(quickActions).forEach(([text, query]) => {
+            const buttons = document.querySelectorAll('.quick-btn');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes(text)) {
+                    btn.onclick = () => {
+                        const input = document.getElementById('assistantInput');
+                        if (input) {
+                            input.value = query;
+                            this.sendMessage();
+                        }
+                    };
+                }
+            });
         });
     }
 
-    setupDataListeners() {
-        // تحديث الردود عند تغيير البيانات
-        if (typeof dataManager !== 'undefined') {
-            setInterval(() => {
-                this.currentData = {
-                    customers: dataManager.customers,
-                    sales: dataManager.sales
-                };
-            }, 5000);
-        }
+    addWelcomeMessage() {
+        const welcomeMsg = `مرحباً! 👋 أنا المساعد الذكي المتقدم لـ Data Vision.
+
+أستطيع الإجابة على 500+ سؤال مختلف عن:
+• العملاء والمبيعات
+• التقارير والتحليلات  
+• النصائح والاستراتيجيات
+• حل المشاكل والتحديات
+
+جرب أن تسألني بأي طريقة تفضل! 🧠`;
+
+        this.addMessageToChat(welcomeMsg, 'ai');
     }
 
     sendMessage() {
-        const input = document.getElementById('assistantInput');
-        if (!input) return;
+        console.log('🚀 بدء إرسال الرسالة...');
         
+        const input = document.getElementById('assistantInput');
+        if (!input) {
+            console.error('❌ حقل الإدخال غير موجود');
+            this.showNotification('حقل الإدخال غير موجود', 'error');
+            return;
+        }
+
         const message = input.value.trim();
         if (!message) {
+            console.warn('⚠️ رسالة فارغة');
             this.showNotification('اكتب سؤالاً أولاً!', 'warning');
             return;
         }
 
+        console.log('📤 إرسال الرسالة:', message);
+
         // إضافة رسالة المستخدم
         this.addMessageToChat(message, 'user');
         input.value = '';
-        
-        // مؤشر تحميل
+
+        // مؤشر الكتابة
         this.showTypingIndicator();
-        
+
+        // تحديث البيانات الحالية
+        this.updateCurrentData();
+
         // معالجة السؤال
         setTimeout(() => {
             this.hideTypingIndicator();
             const response = this.generateSmartResponse(message);
             this.addMessageToChat(response, 'ai');
-        }, 800);
+            console.log('✅ تم إرسال الرد بنجاح');
+        }, 1500);
+    }
+
+    updateCurrentData() {
+        // تحديث البيانات من النظام الرئيسي
+        if (typeof dataManager !== 'undefined') {
+            this.currentData.customers = dataManager.customers || [];
+            this.currentData.sales = dataManager.sales || [];
+        } else if (window.customers && window.sales) {
+            this.currentData.customers = window.customers;
+            this.currentData.sales = window.sales;
+        }
+        
+        console.log('📊 بيانات محدثة:', {
+            customers: this.currentData.customers.length,
+            sales: this.currentData.sales.length
+        });
     }
 
     generateSmartResponse(question) {
@@ -177,6 +258,8 @@ class AdvancedAIAssistant {
         
         // 🔍 البحث في جميع الفئات
         const category = this.detectQuestionCategory(q);
+        
+        console.log('🎯 تصنيف السؤال:', category);
         
         switch(category) {
             case 'customers':
@@ -248,11 +331,6 @@ class AdvancedAIAssistant {
             return this.getCustomersWithoutSalesResponse();
         }
         
-        // تفاصيل العملاء
-        if (this.containsAny(q, ['تفاصيل العملاء', 'بيانات العملاء', 'معلومات العملاء'])) {
-            return this.getCustomersDetailsResponse();
-        }
-        
         return this.getGeneralCustomersResponse();
     }
 
@@ -285,11 +363,6 @@ class AdvancedAIAssistant {
             return this.getSalesComparisonResponse();
         }
         
-        // أفضل أيام المبيعات
-        if (this.containsAny(q, ['أفضل يوم', 'أكثر يوم مبيعات', 'أعلى يوم'])) {
-            return this.getBestSalesDaysResponse();
-        }
-        
         return this.getGeneralSalesResponse();
     }
 
@@ -312,11 +385,6 @@ class AdvancedAIAssistant {
             return this.getSalesReport();
         }
         
-        // تقرير الأداء
-        if (this.containsAny(q, ['تقرير الأداء', 'تحليل الأداء', 'تقرير النتائج'])) {
-            return this.getPerformanceReport();
-        }
-        
         return this.getComprehensiveReport();
     }
 
@@ -337,11 +405,6 @@ class AdvancedAIAssistant {
         // استراتيجيات
         if (this.containsAny(q, ['استراتيجية', 'خطة', 'طريقة'])) {
             return this.getStrategyAdviceResponse();
-        }
-        
-        // حل المشاكل
-        if (this.containsAny(q, ['مشكلة', 'عقبة', 'تحدي'])) {
-            return this.getProblemSolvingResponse(q);
         }
         
         return this.getGeneralAdviceResponse();
@@ -376,7 +439,7 @@ class AdvancedAIAssistant {
 
     // 👥 ردود العملاء التفصيلية
     getCustomersCountResponse() {
-        const customers = this.getCurrentCustomers();
+        const customers = this.currentData.customers;
         const total = customers.length;
         const active = customers.filter(c => c.status === 'active').length;
         const inactive = total - active;
@@ -388,11 +451,13 @@ class AdvancedAIAssistant {
 • **النشطين:** ${active} عميل (${activeRate}%)
 • **غير النشطين:** ${inactive} عميل
 
-${this.getCustomersCountAdvice(total, activeRate)}`;
+${total === 0 ? '🚀 **ابدأ الآن:** أضف أول عملائك!' : 
+ activeRate < 60 ? '💡 **انتبه:** ركز على تفعيل العملاء غير النشطين' : 
+ '✅ **ممتاز:** قاعدة عملائك في حالة جيدة'}`;
     }
 
     getActiveCustomersResponse() {
-        const customers = this.getCurrentCustomers();
+        const customers = this.currentData.customers;
         const total = customers.length;
         const active = customers.filter(c => c.status === 'active').length;
         const activeRate = total > 0 ? (active / total * 100).toFixed(1) : 0;
@@ -402,11 +467,13 @@ ${this.getCustomersCountAdvice(total, activeRate)}`;
 • **العدد:** ${active} عميل
 • **النسبة:** ${activeRate}% من إجمالي العملاء
 
-${this.getActiveCustomersAdvice(active, activeRate)}`;
+${active === 0 ? '🚨 **تحذير:** لا يوجد عملاء نشطين!' : 
+ activeRate > 80 ? '🎊 **ممتاز:** نسبة نشاط عالية جداً' : 
+ '💡 **جيد:** يمكن تحسين النسبة'}`;
     }
 
     getInactiveCustomersResponse() {
-        const customers = this.getCurrentCustomers();
+        const customers = this.currentData.customers;
         const total = customers.length;
         const active = customers.filter(c => c.status === 'active').length;
         const inactive = total - active;
@@ -417,11 +484,17 @@ ${this.getActiveCustomersAdvice(active, activeRate)}`;
 • **العدد:** ${inactive} عميل  
 • **النسبة:** ${inactiveRate}% من الإجمالي
 
-${this.getInactiveCustomersAdvice(inactive)}`;
+${inactive > 0 ? `🔔 **فرصة:** لديك ${inactive} عميل يحتاج تفعيل
+
+💡 **اقتراحات:**
+• أرسل عروضاً حصرية
+• اتصل بهم للمتابعة
+• قدم خصومات تشجيعية` : 
+ '🎉 **ممتاز:** جميع عملائك نشطين'}`;
     }
 
     getGovernorateCustomersResponse(question) {
-        const customers = this.getCurrentCustomers();
+        const customers = this.currentData.customers;
         const govData = this.analyzeGovernorates(customers);
         
         let specificGov = null;
@@ -440,7 +513,9 @@ ${this.getInactiveCustomersAdvice(inactive)}`;
             const govCustomers = customers.filter(c => c.governorate === specificGov).length;
             return `📍 **عملاء ${specificGov}:** ${govCustomers} عميل
 
-${this.getGovernorateSpecificAdvice(specificGov, govCustomers)}`;
+${govCustomers === 0 ? `💡 **فرصة:** لا يوجد عملاء في ${specificGov} - ركز على التوسع هناك` :
+ govCustomers < 5 ? `📈 **نصيحة:** زد جهودك التسويقية في ${specificGov}` :
+ '✅ **جيد:** تواجد قوي في هذه المحافظة'}`;
         }
 
         return `🏙️ **توزيع العملاء حسب المحافظات:**
@@ -453,9 +528,22 @@ ${Object.entries(govData)
 ${this.getGovernorateDistributionAdvice(govData)}`;
     }
 
+    getGovernorateDistributionAdvice(govData) {
+        const entries = Object.entries(govData);
+        if (entries.length === 0) return '💡 **ابدأ:** أضف عملاء من محافظات مختلفة';
+        
+        const maxGov = entries[0];
+        const minGov = entries[entries.length - 1];
+        
+        return `🎯 **التحليل:** 
+• أعلى محافظة: ${maxGov[0]} (${maxGov[1]} عميل)
+• أقل محافظة: ${minGov[0]} (${minGov[1]} عميل)
+• فرصة التوسع: ركز على المحافظات ذات العدد المنخفض`;
+    }
+
     getTopCustomersResponse() {
-        const customers = this.getCurrentCustomers();
-        const sales = this.getCurrentSales();
+        const customers = this.currentData.customers;
+        const sales = this.currentData.sales;
         
         const topCustomers = customers.map(customer => {
             const customerSales = sales.filter(s => s.customer_id === customer.id);
@@ -463,12 +551,11 @@ ${this.getGovernorateDistributionAdvice(govData)}`;
             return {
                 name: customer.name,
                 totalSpent: totalSpent,
-                salesCount: customerSales.length,
-                lastPurchase: this.getLastPurchaseDate(customer.id, sales)
+                salesCount: customerSales.length
             };
         }).sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
 
-        if (topCustomers.length === 0) {
+        if (topCustomers.length === 0 || topCustomers[0].totalSpent === 0) {
             return `🏆 **أفضل العملاء:**
 
 لا توجد بيانات كافية لعرض أفضل العملاء.
@@ -481,28 +568,37 @@ ${topCustomers.map((cust, index) =>
     `${index + 1}. **${cust.name}** - ${cust.totalSpent.toFixed(2)} دينار (${cust.salesCount} عملية)`
 ).join('\n')}
 
-${this.getTopCustomersAdvice(topCustomers)}`;
+💎 **إجمالي مشترياتهم:** ${topCustomers.reduce((sum, cust) => sum + cust.totalSpent, 0).toFixed(2)} دينار
+
+🎯 **نصيحة:** كافئ أفضل عملائك لزيادة ولائهم!`;
     }
 
     getCustomersWithoutSalesResponse() {
-        const customers = this.getCurrentCustomers();
-        const sales = this.getCurrentSales();
+        const customers = this.currentData.customers;
+        const sales = this.currentData.sales;
         
         const customersWithoutSales = customers.filter(customer => 
             !sales.some(sale => sale.customer_id === customer.id)
-        );
+        ).length;
+
+        const customersWithSales = customers.filter(customer => 
+            sales.some(sale => sale.customer_id === customer.id)
+        ).length;
+
+        const conversionRate = customers.length > 0 ? (customersWithSales / customers.length * 100).toFixed(1) : 0;
 
         return `🔄 **العملاء الذين لم يشتروا:**
 
-• **العدد:** ${customersWithoutSales.length} عميل
-• **النسبة:** ${(customersWithoutSales.length / customers.length * 100).toFixed(1)}% من الإجمالي
+• **العدد:** ${customersWithoutSales} عميل
+• **نسبة التحويل:** ${conversionRate}% من العملاء قاموا بالشراء
 
-${this.getCustomersWithoutSalesAdvice(customersWithoutSales.length)}`;
+${customersWithoutSales > 0 ? `🎯 **خطة العمل:** ركز على تحويل ${customersWithoutSales} عميل إلى مشترين` : 
+ '🎊 **مذهل:** جميع عملائك قاموا بالشراء!'}`;
     }
 
     // 💰 ردود المبيعات التفصيلية
     getTotalSalesResponse() {
-        const sales = this.getCurrentSales();
+        const sales = this.currentData.sales;
         const totalRevenue = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
         const totalCount = sales.length;
         const avgSale = totalCount > 0 ? totalRevenue / totalCount : 0;
@@ -513,11 +609,13 @@ ${this.getCustomersWithoutSalesAdvice(customersWithoutSales.length)}`;
 • **العمليات:** ${totalCount} عملية بيع  
 • **المتوسط:** ${avgSale.toFixed(2)} دينار
 
-${this.getTotalSalesAdvice(totalRevenue, totalCount)}`;
+${totalRevenue === 0 ? '🚀 **ابدأ الآن:** سجل أول عملية بيع!' : 
+ avgSale < 50 ? '💡 **تحسين:** زد متوسط البيع بالترقيات' : 
+ '✅ **ممتاز:** أداء مبيعاتك جيد'}`;
     }
 
     getSalesCountResponse() {
-        const sales = this.getCurrentSales();
+        const sales = this.currentData.sales;
         const totalCount = sales.length;
         const totalRevenue = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
 
@@ -526,11 +624,13 @@ ${this.getTotalSalesAdvice(totalRevenue, totalCount)}`;
 • **العدد:** ${totalCount} عملية
 • **الإجمالي:** ${totalRevenue.toFixed(2)} دينار
 
-${this.getSalesCountAdvice(totalCount)}`;
+${totalCount === 0 ? '🎯 **حان الوقت:** سجل أول عملية بيع!' : 
+ totalCount < 10 ? '💡 **نصيحة:** ركز على زيادة وتيرة المبيعات' : 
+ '🚀 **ممتاز:** وتيرة مبيعاتك جيدة'}`;
     }
 
     getAverageSaleResponse() {
-        const sales = this.getCurrentSales();
+        const sales = this.currentData.sales;
         const totalRevenue = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
         const totalCount = sales.length;
         const avgSale = totalCount > 0 ? totalRevenue / totalCount : 0;
@@ -541,11 +641,14 @@ ${this.getSalesCountAdvice(totalCount)}`;
 • **الإجمالي:** ${totalRevenue.toFixed(2)} دينار
 • **العمليات:** ${totalCount} عملية
 
-${this.getAverageSaleAdvice(avgSale)}`;
+${avgSale === 0 ? '📝 **ابدأ:** سجل مبيعاتك الأولى' :
+ avgSale < 30 ? '💡 **تحسين:** ركز على البيع بالقيمة' :
+ avgSale < 100 ? '✅ **جيد:** متوسط معقول' :
+ '🎉 **ممتاز:** متوسط بيع عالي!'}`;
     }
 
     getSalesTrendResponse() {
-        const sales = this.getCurrentSales();
+        const sales = this.currentData.sales;
         const recentSales = this.getRecentSales(sales, 30);
         const previousSales = this.getRecentSales(sales, 60, 30);
         
@@ -561,11 +664,15 @@ ${this.getAverageSaleAdvice(avgSale)}`;
 • **الفترة السابقة:** ${previousRevenue > 0 ? previousRevenue.toFixed(2) + ' دينار' : 'لا توجد بيانات'}
 • **معدل النمو:** ${previousRevenue > 0 ? growthRate + '%' : 'جديد'}
 
-${this.getSalesTrendAdvice(growthRate, recentRevenue)}`;
+${recentRevenue === 0 ? '🚨 **تحذير:** لا توجد مبيعات حديثة!' :
+ growthRate > 10 ? '🎉 **ممتاز:** نمو قوي!' :
+ growthRate > 0 ? '✅ **جيد:** نمو إيجابي' :
+ growthRate < 0 ? '⚠️ **انتبه:** انخفاض في المبيعات' :
+ '📋 **مستقر:** أداء ثابت'}`;
     }
 
     getSalesComparisonResponse() {
-        const sales = this.getCurrentSales();
+        const sales = this.currentData.sales;
         const currentMonth = this.getMonthSales(sales, new Date());
         const lastMonth = this.getMonthSales(sales, new Date(new Date().setMonth(new Date().getMonth() - 1)));
         
@@ -580,34 +687,35 @@ ${this.getSalesTrendAdvice(growthRate, recentRevenue)}`;
 • **الشهر الماضي:** ${lastRevenue.toFixed(2)} دينار  
 • **نسبة التغير:** ${growth}%
 
-${this.getSalesComparisonAdvice(growth, currentRevenue)}`;
+${lastRevenue > 0 ? 
+ (Math.abs(growth) > 20 ? 
+  (growth > 0 ? '🎊 **مذهل:** نمو قوي جداً!' : '⚠️ **انتبه:** انخفاض ملحوظ!') : 
+  '📋 **مستقر:** أداء متوازن') : 
+ '🆕 **بداية:** هذا هو أول شهر لك!'}`;
     }
 
     // 📊 ردود التقارير
     getComprehensiveReport() {
-        const customers = this.getCurrentCustomers();
-        const sales = this.getCurrentSales();
+        const customers = this.currentData.customers;
+        const sales = this.currentData.sales;
         
         const totalCustomers = customers.length;
         const activeCustomers = customers.filter(c => c.status === 'active').length;
         const totalSalesCount = sales.length;
         const totalRevenue = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
         const avgSale = totalSalesCount > 0 ? totalRevenue / totalSalesCount : 0;
-        const recentSales = this.getRecentSales(sales, 30);
-        const recentRevenue = recentSales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
 
         return `📊 **تقرير أداء شامل - Data Vision**
 
 👥 **قاعدة العملاء:**
 • الإجمالي: ${totalCustomers} عميل
-• النشطين: ${activeCustomers} (${(activeCustomers/totalCustomers*100).toFixed(1)}%)
+• النشطين: ${activeCustomers} (${totalCustomers > 0 ? (activeCustomers/totalCustomers*100).toFixed(1) : 0}%)
 • غير النشطين: ${totalCustomers - activeCustomers}
 
 💰 **الأداء المالي:**
 • إجمالي المبيعات: ${totalRevenue.toFixed(2)} دينار
 • عدد العمليات: ${totalSalesCount}
 • متوسط البيع: ${avgSale.toFixed(2)} دينار
-• مبيعات آخر 30 يوم: ${recentRevenue.toFixed(2)} دينار
 
 🎯 **التقييم:**
 ${this.getPerformanceAssessment(customers, sales)}
@@ -616,9 +724,49 @@ ${this.getPerformanceAssessment(customers, sales)}
 ${this.getComprehensiveRecommendations(customers, sales)}`;
     }
 
+    getPerformanceAssessment(customers, sales) {
+        const totalCustomers = customers.length;
+        const activeCustomers = customers.filter(c => c.status === 'active').length;
+        const totalSales = sales.length;
+
+        if (totalCustomers === 0 && totalSales === 0) {
+            return "🆕 **مرحلة البداية:** ابدأ بإضافة عملائك وتسجيل مبيعاتك الأولى";
+        } else if (totalCustomers > 0 && totalSales === 0) {
+            return "📝 **مرحلة التأسيس:** لديك عملاء ولكن لا توجد مبيعات، ركز على التحويل";
+        } else if (totalSales > 0 && activeCustomers / totalCustomers < 0.6) {
+            return "⚠️ **يحتاج تحسين:** المبيعات جيدة ولكن نسبة العملاء النشطين منخفضة";
+        } else if (totalSales > 0) {
+            return "🎉 **ممتاز:** أداء قوي في جميع المجالات!";
+        } else {
+            return "📊 **جيد:** أداء مقبول، يمكن التحسين";
+        }
+    }
+
+    getComprehensiveRecommendations(customers, sales) {
+        const recommendations = [];
+        const totalCustomers = customers.length;
+        const activeCustomers = customers.filter(c => c.status === 'active').length;
+        const totalSales = sales.length;
+
+        if (totalCustomers === 0) {
+            recommendations.push('• ابدأ بإضافة أول 10 عملاء');
+        }
+        if (activeCustomers / totalCustomers < 0.7 && totalCustomers > 0) {
+            recommendations.push(`• فعّل ${totalCustomers - activeCustomers} عميل غير نشط`);
+        }
+        if (totalSales === 0) {
+            recommendations.push('• سجل أول عملية بيع');
+        }
+        if (totalSales > 0 && totalSales / totalCustomers < 1) {
+            recommendations.push('• زد معدل الشراء للعملاء الحاليين');
+        }
+
+        return recommendations.length > 0 ? recommendations.join('\n') : '• استمر في الاستراتيجية الحالية، أداؤك ممتاز!';
+    }
+
     getCustomersReport() {
-        const customers = this.getCurrentCustomers();
-        const sales = this.getCurrentSales();
+        const customers = this.currentData.customers;
+        const sales = this.currentData.sales;
         
         const total = customers.length;
         const active = customers.filter(c => c.status === 'active').length;
@@ -630,18 +778,22 @@ ${this.getComprehensiveRecommendations(customers, sales)}`;
 
 📈 **الإحصائيات:**
 • الإجمالي: ${total} عميل
-• النشطين: ${active} (${(active/total*100).toFixed(1)}%)
-• المشترين: ${customersWithSales} (${(customersWithSales/total*100).toFixed(1)}%)
+• النشطين: ${active} (${total > 0 ? (active/total*100).toFixed(1) : 0}%)
+• المشترين: ${customersWithSales} (${total > 0 ? (customersWithSales/total*100).toFixed(1) : 0}%)
 
 🎯 **التحليل:**
-${this.getCustomersReportAnalysis(customers, sales)}
+${total === 0 ? '• ابدأ ببناء قاعدة العملاء' :
+ active/total < 0.6 ? '• ركز على تفعيل العملاء غير النشطين' :
+ '• قاعدة عملائك في حالة جيدة'}
 
 💡 **الخطوات:**
-${this.getCustomersReportActions(customers, sales)}`;
+1. أضف عملاء جدد بانتظام
+2. تابع العملاء غير النشطين
+3. كافئ العملاء المميزين`;
     }
 
     getSalesReport() {
-        const sales = this.getCurrentSales();
+        const sales = this.currentData.sales;
         
         const totalRevenue = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
         const totalCount = sales.length;
@@ -664,30 +816,82 @@ ${this.getSalesTrendAnalysis(sales)}
 ${this.getSalesStrategy(sales)}`;
     }
 
+    getSalesTrendAnalysis(sales) {
+        const recent = this.getRecentSales(sales, 30);
+        const previous = this.getRecentSales(sales, 60, 30);
+        
+        if (recent.length === 0) return '• لا توجد مبيعات حديثة للتحليل';
+        if (previous.length === 0) return '• بداية جيدة، استمر في تسجيل المبيعات';
+        
+        const recentRevenue = recent.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+        const previousRevenue = previous.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+        const growth = ((recentRevenue - previousRevenue) / previousRevenue * 100).toFixed(1);
+        
+        return growth > 0 ? 
+            `• نمو إيجابي بنسبة ${growth}% عن الفترة السابقة` :
+            `• انخفاض بنسبة ${Math.abs(growth)}% يحتاج تحسين`;
+    }
+
+    getSalesStrategy(sales) {
+        const avgSale = sales.length > 0 ? 
+            sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0) / sales.length : 0;
+            
+        if (avgSale < 30) return '• ركز على زيادة قيمة البيع بالترقيات';
+        if (avgSale < 100) return '• وسع نطاق المنتجات والخدمات';
+        return '• حافظ على الجودة وابحث عن عملاء جدد';
+    }
+
     // 💡 ردود النصائح
     getGeneralAdviceResponse() {
         return `💡 **نصائح ذكية لتحسين أدائك:**
 
-${this.getPerformanceTips()}
+• تابع العملاء غير النشطين أسبوعياً
+• قدم عروضاً حصرية للعملاء المميزين
+• حَسّن متوسط البيع بالباقات والترقيات
+• استخدم البيانات لاتخاذ قرارات أفضل
+• جرب استراتيجيات تسويق جديدة
 
 🎯 **الأولويات الحالية:**
-${this.getCurrentPriorities()}
+${this.getCurrentPriorities()}`;
+    }
 
-🚀 **خطوات سريعة:**
-${this.getQuickActions()}`;
+    getCurrentPriorities() {
+        const customers = this.currentData.customers;
+        const sales = this.currentData.sales;
+        
+        if (customers.length === 0) return '• بناء قاعدة العملاء الأساسية';
+        if (sales.length === 0) return '• بدء المبيعات والتحويل';
+        return '• تحسين أداء العملاء الحاليين';
     }
 
     getImprovementAdviceResponse() {
         return `🔄 **خطة التحسين المخصصة:**
 
 📊 **بناءً على أدائك الحالي:**
-${this.getPerformanceAssessment(this.getCurrentCustomers(), this.getCurrentSales())}
+${this.getPerformanceAssessment(this.currentData.customers, this.currentData.sales)}
 
 🎯 **مجالات التحسين:**
 ${this.getImprovementAreas()}
 
 💡 **خطة التنفيذ:**
-${this.getActionPlan()}`;
+1. حدد 3 أهداف قابلة للقياس
+2. أنشئ خطة أسبوعية للمتابعة
+3. تتبع النتائج أسبوعياً
+4. عدّل الاستراتيجية بناءً على البيانات`;
+    }
+
+    getImprovementAreas() {
+        const customers = this.currentData.customers;
+        const sales = this.currentData.sales;
+        const areas = [];
+        
+        if (customers.length === 0) areas.push('• بناء قاعدة العملاء');
+        if (sales.length === 0) areas.push('• بدء المبيعات');
+        if (customers.filter(c => c.status === 'active').length / customers.length < 0.6 && customers.length > 0) {
+            areas.push('• تفعيل العملاء غير النشطين');
+        }
+        
+        return areas.length > 0 ? areas.join('\n') : '• تحسين الكفاءة التشغيلية';
     }
 
     getStrategyAdviceResponse() {
@@ -711,21 +915,121 @@ ${this.getActionPlan()}`;
 💎 **مفتاح النجاح:** الاستمرارية والتحسين المستمر!`;
     }
 
+    // 🔄 ردود عامة
+    getGeneralCustomersResponse() {
+        return `👥 **معلومات عامة عن العملاء:**
+
+يمكنني مساعدتك في معرفة:
+• عدد العملاء الإجمالي
+• العملاء النشطين وغير النشطين  
+• توزيع العملاء حسب المحافظات
+• أفضل العملاء أداءً
+• العملاء الذين لم يشتروا بعد
+
+💡 جرب أن تسأل: "كم عميل لدي؟" أو "شو وضع العملاء؟"`;
+    }
+
+    getGeneralSalesResponse() {
+        return `💰 **معلومات عامة عن المبيعات:**
+
+أستطيع إخبارك عن:
+• إجمالي المبيعات والقيمة
+• عدد عمليات البيع
+• متوسط قيمة البيع
+• اتجاهات المبيعات والتغير
+• مقارنة الأداء الشهري
+
+💡 جرب أن تسأل: "كم مبيعاتي؟" أو "شو وضع المبيعات؟"`;
+    }
+
+    getGreetingResponse() {
+        return `مرحباً بك! 👋 
+
+أنا المساعد الذكي لـ Data Vision. أستطيع مساعدتك في تحليل بيانات العملاء والمبيعات، وتقديم تقارير شاملة، ونصائح لتحسين الأداء.
+
+كيف يمكنني مساعدتك اليوم؟ 🚀`;
+    }
+
+    getThanksResponse() {
+        return `العفو! 😊 
+
+سعيد بأن أستطيع مساعدتك. إذا كان لديك أي أسئلة أخرى عن عملائك أو مبيعاتك، فلا تتردد في سؤالي.
+
+حظاً موفقاً! 🌟`;
+    }
+
+    getHelpResponse() {
+        return `🆘 **كيف يمكنني مساعدتك؟**
+
+أستطيع الإجابة على أسئلة مثل:
+
+**👥 عن العملاء:**
+• "كم عميل لدي؟"
+• "شو وضع العملاء النشطين؟"
+• "عملاء عمان كم عددهم؟"
+• "أعطيني أفضل العملاء"
+
+**💰 عن المبيعات:**
+• "كم إجمالي مبيعاتي؟" 
+• "شو متوسط البيع؟"
+• "كيف المبيعات هالشهر؟"
+• "قارن مبيعاتي مع الشهر الماضي"
+
+**📊 تقارير:**
+• "أعطني تقرير شامل"
+• "تقرير العملاء"
+• "تقرير المبيعات"
+
+**💡 نصائح:**
+• "نصيحة لتحسين المبيعات"
+• "شو أسوي عشان أزيد العملاء؟"
+• "استراتيجية للتطوير"
+
+جرب أي سؤال! أنا هنا لمساعدتك. 🤝`;
+    }
+
+    getIntroductionResponse() {
+        return `🤖 **تعريف عن المساعد الذكي:**
+
+أنا المساعد الذكي المتقدم لـ **Data Vision** - نظام إدارة العملاء والمبيعات.
+
+**ماذا أستطيع فعلة:**
+• تحليل بيانات العملاء والمبيعات
+• الإجابة على 500+ سؤال مختلف
+• تقديم تقارير أداء شاملة
+• نصائح مخصصة لتحسين النتائج
+• تحليل الاتجاهات والتوقعات
+
+**مميزاتي:**
+✅ فهم اللهجات المختلفة
+✅ ردود ذكية ومخصصة
+✅ تكامل كامل مع بياناتك
+✅ دعم 500+ سؤال محتمل
+
+أسعد دائماً بمساعدتك! 🌟`;
+    }
+
+    getFallbackResponse(question) {
+        return `🤖 **مساعد Data Vision**
+
+🔍 لاحظت سؤالك: "${question}"
+
+💡 أستطيع مساعدتك في:
+• تحليل العملاء والمبيعات
+• تقديم تقارير أداء
+• نصائح لتحسين النتائج
+• إجابة أسئلة محددة عن بياناتك
+
+📊 **جرب أن تسأل:**
+"كم عميل لدي؟"
+"ما هي مبيعاتي الإجمالية؟"
+"أعطني تقرير شامل"
+"كيف أزيد أرباحي؟"
+
+أو اختر أحد الأزرار السريعة أعلى شات الدردشة! 🚀`;
+    }
+
     // 🛠️ دوال مساعدة
-    getCurrentCustomers() {
-        if (typeof dataManager !== 'undefined' && dataManager.customers) {
-            return dataManager.customers;
-        }
-        return window.customers || [];
-    }
-
-    getCurrentSales() {
-        if (typeof dataManager !== 'undefined' && dataManager.sales) {
-            return dataManager.sales;
-        }
-        return window.sales || [];
-    }
-
     containsAny(text, phrases) {
         return phrases.some(phrase => text.includes(phrase));
     }
@@ -761,43 +1065,41 @@ ${this.getActionPlan()}`;
         return govData;
     }
 
-    getLastPurchaseDate(customerId, sales) {
-        const customerSales = sales.filter(s => s.customer_id === customerId);
-        if (customerSales.length === 0) return 'لم يشترِ بعد';
-        
-        const lastSale = customerSales.sort((a, b) => 
-            new Date(b.sale_date) - new Date(a.sale_date)
-        )[0];
-        
-        return new Date(lastSale.sale_date).toLocaleDateString('ar-JO');
-    }
-
-    // ... (استمرار الدوال المساعدة والردود المخصصة)
-
-    // 🎨 دوال الواجهة
+    // 🎨 دوال الواجهة - معدلة
     addMessageToChat(message, sender) {
         const chatContainer = document.getElementById('chatContainer');
-        if (!chatContainer) return;
+        if (!chatContainer) {
+            console.error('❌ حاوية الدردشة غير موجودة');
+            return;
+        }
         
         const messageDiv = document.createElement('div');
-        messageDiv.classList.add('chat-message');
-        messageDiv.classList.add(sender === 'ai' ? 'ai-message' : 'user-message');
+        messageDiv.className = `chat-message ${sender}-message`;
+        
+        const time = new Date().toLocaleTimeString('ar-JO', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
         
         messageDiv.innerHTML = `
-            <div class="message-avatar">${sender === 'ai' ? '🤖' : '👤'}</div>
+            <div class="message-avatar">${sender === 'user' ? '👤' : '🤖'}</div>
             <div class="message-content">
                 <div class="message-text">${message}</div>
-                <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                <div class="message-time">${time}</div>
             </div>
         `;
         
         chatContainer.appendChild(messageDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
+        
+        console.log(`💬 تم إضافة رسالة ${sender}:`, message.substring(0, 50) + '...');
     }
 
     showTypingIndicator() {
         const chatContainer = document.getElementById('chatContainer');
         if (!chatContainer) return;
+        
+        this.hideTypingIndicator();
         
         const typingDiv = document.createElement('div');
         typingDiv.id = 'typing-indicator';
@@ -805,52 +1107,64 @@ ${this.getActionPlan()}`;
         typingDiv.innerHTML = `
             <div class="message-avatar">🤖</div>
             <div class="message-content">
-                <div class="message-text typing">جاري تحليل البيانات...</div>
+                <div class="message-text typing">جاري الكتابة...</div>
+                <div class="message-time">${new Date().toLocaleTimeString('ar-JO', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                })}</div>
             </div>
         `;
+        
         chatContainer.appendChild(typingDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
     hideTypingIndicator() {
         const typingIndicator = document.getElementById('typing-indicator');
-        if (typingIndicator) typingIndicator.remove();
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
     }
 
     showNotification(message, type = 'info') {
         console.log(`🔔 ${type}: ${message}`);
+        // يمكن إضافة نافذة تنبيه فعلية هنا
+        if (typeof showNotification === 'function') {
+            showNotification(message, type);
+        }
     }
 }
 
-// 🌟 تشغيل النظام
+// 🌟 تشغيل النظام المحسن
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 تشغيل المساعد المتقدم...');
-    window.aiAssistant = new AdvancedAIAssistant();
+    console.log('🚀 تشغيل المساعد المتقدم المحسن...');
     
-    // رسالة ترحيبية
+    // تأخير بسيط لضمان تحميل كل شيء
     setTimeout(() => {
-        window.aiAssistant.addMessageToChat(
-            `مرحباً! 👋 أنا المساعد الذكي المتقدم لـ Data Vision.
-
-أستطيع الإجابة على 500+ سؤال مختلف عن:
-• العملاء والمبيعات
-• التقارير والتحليلات  
-• النصائح والاستراتيجيات
-• حل المشاكل والتحديات
-
-جرب أن تسألني بأي طريقة تفضل! 🧠`,
-            'ai'
-        );
-    }, 1000);
+        window.aiAssistant = new AdvancedAIAssistant();
+        console.log('✅ المساعد المتقدم جاهز للعمل!');
+    }, 2000);
 });
 
-// 🔄 جعل الدوال متاحة
+// 🔄 جعل الدوال متاحة globally
 window.askAssistant = (question) => {
-    document.getElementById('assistantInput').value = question;
-    window.aiAssistant.sendMessage();
+    const input = document.getElementById('assistantInput');
+    if (input && window.aiAssistant) {
+        input.value = question;
+        window.aiAssistant.sendMessage();
+    }
 };
 
-window.sendMessage = () => window.aiAssistant.sendMessage();
-window.handleKeyPress = (e) => e.key === 'Enter' && window.aiAssistant.sendMessage();
+window.sendMessage = () => {
+    if (window.aiAssistant) {
+        window.aiAssistant.sendMessage();
+    }
+};
 
-console.log('✅ المساعد المتقدم جاهز للإجابة على 500+ سؤال!');
+window.handleKeyPress = (e) => {
+    if (e.key === 'Enter' && window.aiAssistant) {
+        window.aiAssistant.sendMessage();
+    }
+};
+
+console.log('✅ نظام المساعد المتقدم محمل وجاهز للإجابة على 500+ سؤال!');
