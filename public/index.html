@@ -221,8 +221,10 @@
                 <div class="settings-section">
                     <h3>📁 استيراد وتصدير البيانات</h3>
                     <div class="button-group" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button onclick="openExportModal()" class="btn btn-primary">📤 تصدير البيانات</button>
-                        <button onclick="openImportModal()" class="btn btn-secondary">📥 استيراد البيانات</button>
+<button class="btn btn-success" onclick="exportData()">📄 تصدير JSON</button>
+<button class="btn btn-warning" onclick="document.getElementById('importJson').click()">
+    📄 استيراد JSON
+</button>
                     </div>
                 </div>
 
@@ -417,3 +419,4 @@
 
 </body>
 </html>
+
