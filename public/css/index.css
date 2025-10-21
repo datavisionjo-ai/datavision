@@ -2533,3 +2533,42 @@ body::before {
     background: #007bff;
     color: white;
 }
+/* تحسين عرض تحليل المحافظات */
+.governorate-analysis .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.analysis-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.analysis-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* تحسين عرض العملاء */
+.customer-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.customer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* تحسين الأزرار */
+.btn-whatsapp {
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    color: white;
+    border: none;
+}
+
+.btn-whatsapp:hover {
+    background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
+    transform: translateY(-1px);
+}
