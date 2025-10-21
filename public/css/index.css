@@ -2692,3 +2692,11 @@ body::before {
 .notification.info { background: var(--info); }
 .notification.warning { background: var(--warning); }
 
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
