@@ -213,9 +213,115 @@ function checkAuthStatus() {
     return !!token && !!user && !!currentUser;
 }
 
-// جعل الدالة متاحة
-window.checkAuthStatus = checkAuthStatus;
-// جعل الدوال متاحة globally
+// 👥 إدارة الموظفين - الدوال الناقصة
+async function getEmployees() {
+    try {
+        const result = await apiRequest('/users/employees');
+        return result.employees || [];
+    } catch (error) {
+        console.error('Error fetching employees:', error);
+        return [];
+    }
+}
+
+async function addEmployee(employeeData) {
+    try {
+        const result = await apiRequest('/users/employees', {
+            method: 'POST',
+            body: JSON.stringify(employeeData)
+        });
+        return result.employee;
+    } catch (error) {
+        console.error('Error adding employee:', error);
+        throw error;
+    }
+}
+
+async function updateEmployee(id, employeeData) {
+    try {
+        const result = await apiRequest(`/users/employees/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(employeeData)
+        });
+        return result.employee;
+    } catch (error) {
+        console.error('Error updating employee:', error);
+        throw error;
+    }
+}
+
+async function deleteEmployeeAPI(id) {
+    try {
+        const result = await apiRequest(`/users/employees/${id}`, {
+            method: 'DELETE'
+        });
+        return result;
+    } catch (error) {
+        console.error('Error deleting employee:', error);
+        throw error;
+    }
+}
+
+async function toggleEmployeeStatusAPI(id, status) {
+    try {
+        const result = await apiRequest(`/users/employees/${id}/status`, {
+            method: 'PUT',
+            body: JSON.stringify({ status })
+        });
+        return result;
+    } catch (error) {
+        console.error('Error toggling employee status:', error);
+        throw error;
+    }
+}
+
+// 📊 دوال إضافية للملف الشخصي
+async function updateUserProfile(profileData) {
+    try {
+        const result = await apiRequest('/user/profile', {
+            method: 'PUT',
+            body: JSON.stringify(profileData)
+        });
+        return result;
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+    }
+}
+
+async function exportUserData() {
+    try {
+        const result = await apiRequest('/user/export-data');
+        return result.data;
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        throw error;
+    }
+}
+
+async function deleteUserAccount() {
+    try {
+        const result = await apiRequest('/user/account', {
+            method: 'DELETE'
+        });
+        return result;
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        throw error;
+    }
+}
+
+async function getUserActivities(period = '7') {
+    try {
+        const result = await apiRequest(`/user/activities?period=${period}`);
+        return result.activities || [];
+    } catch (error) {
+        console.error('Error fetching activities:', error);
+        return [];
+    }
+}
+
+// جعل الدوال متاحة globally - أضف الدوال الجديدة
 window.login = login;
 window.register = register;
 window.logout = logout;
@@ -229,3 +335,15 @@ window.getStats = getStats;
 window.analyzeWithAI = analyzeWithAI;
 window.isLoggedIn = isLoggedIn;
 window.getCurrentUser = getCurrentUser;
+window.checkAuthStatus = checkAuthStatus;
+
+// 👥 الدوال الجديدة للموظفين والملف الشخصي
+window.getEmployees = getEmployees;
+window.addEmployee = addEmployee;
+window.updateEmployee = updateEmployee;
+window.deleteEmployeeAPI = deleteEmployeeAPI;
+window.toggleEmployeeStatusAPI = toggleEmployeeStatusAPI;
+window.updateUserProfile = updateUserProfile;
+window.exportUserData = exportUserData;
+window.deleteUserAccount = deleteUserAccount;
+window.getUserActivities = getUserActivities;
