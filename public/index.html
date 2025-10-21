@@ -406,12 +406,13 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="js/api-client.js"></script>
-    <script src="js/Basic-data-configuration-and-management.js"></script>
-    <script src="js/Customer-and-sales-management.js"></script>
-    <script src="js/aI-integration.js"></script>
-    <script src="js/user-menu.js"></script>
-    <script src="js/auth.js"></script>
+<!-- ✅ هذا الترتيب الجديد - بدون حذف أي ملف -->
+<script src="js/api-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/user-menu.js"></script>
+<script src="js/Basic-data-configuration-and-management.js"></script>
+<script src="js/aI-integration.js"></script>
+<script src="js/Customer-and-sales-management.js"></script>
     <script>
 // تحقق من تسجيل الدخول
 document.addEventListener('DOMContentLoaded', function() {
@@ -638,7 +639,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('✅ تم تهيئة جميع الدوال');
 });
+        <script>
+// 🔥 كود حل التعارض - بدون لمس ملفاتك
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 بدء حل التعارض...');
+    
+    // انتظر تحميل جميع الملفات
+    setTimeout(function() {
+        console.log('✅ جميع الملفات محملة');
+        
+        // اختصار للدوال الأساسية
+        if (typeof init === 'function') {
+            console.log('🚀 تشغيل init من Basic-data...');
+            init();
+        } else if (typeof initializeData === 'function') {
+            console.log('🚀 تشغيل initializeData من Customer-and-sales...');
+            initializeData();
+        }
+        
+        // تأكد من تحميل البيانات
+        setTimeout(function() {
+            if (customers && customers.length > 0) {
+                console.log('👥 العملاء محملين:', customers.length);
+            } else {
+                console.log('⚠️ لا توجد بيانات، جرب استيراد ملف JSON');
+            }
+        }, 2000);
+        
+    }, 1000);
+});
+</script>
     </script>
 </body>
 </html>
+
 
