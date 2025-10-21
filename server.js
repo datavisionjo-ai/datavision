@@ -1,4 +1,4 @@
-// server.js - كامل ومصحح
+// server.js - كامل ومصحح مع التعديلات المطلوبة
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -50,6 +50,25 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+// 🆕 نظام الصلاحيات الجديد - أضف هذا الكود
+function requireRole(roles) {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ error: 'غير مصرح' });
+        }
+        
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ error: 'ليس لديك الصلاحية لهذا الإجراء' });
+        }
+        
+        next();
+    };
+}
+
+// صلاحيات المدير والإدمن
+const requireManager = requireRole(['admin', 'manager']);
+const requireAdmin = requireRole(['admin']);
 
 // فحص الاتصال بقاعدة البيانات - معدل
 async function testConnection() {
@@ -320,7 +339,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// إنشاء حساب جديد - معدل مع معالجة أفضل للأخطاء
+// إنشاء حساب جديد - معدل لجعل أول مستخدم admin
 app.post('/api/auth/register', async (req, res) => {
     console.log('📝 محاولة تسجيل جديد:', req.body);
     
@@ -358,6 +377,13 @@ app.post('/api/auth/register', async (req, res) => {
             });
         }
 
+        // 🆕 تحديد صلاحية المستخدم - أول مستخدم يكون admin
+        const usersCount = await client.query('SELECT COUNT(*) FROM users');
+        const isFirstUser = parseInt(usersCount.rows[0].count) === 0;
+        const userRole = isFirstUser ? 'admin' : 'user';
+
+        console.log(`🎯 إنشاء مستخدم جديد بصلاحية: ${userRole}`);
+
         // تشفير كلمة المرور
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
@@ -365,12 +391,12 @@ app.post('/api/auth/register', async (req, res) => {
         // حفظ المستخدم
         const result = await client.query(
             `INSERT INTO users (name, email, password_hash, role, status) 
-             VALUES ($1, $2, $3, 'user', 'active') 
+             VALUES ($1, $2, $3, $4, 'active') 
              RETURNING id, name, email, role, created_at`,
-            [name, email, passwordHash]
+            [name, email, passwordHash, userRole]
         );
 
-        console.log('✅ مستخدم جديد مسجل:', result.rows[0].email);
+        console.log('✅ مستخدم جديد مسجل:', result.rows[0].email, 'بصلاحية:', userRole);
 
         // إنشاء توكن
         const token = jwt.sign(
@@ -520,24 +546,63 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
     }
 });
 
-// 👥 إدارة الموظفين
-app.get('/api/users/employees', authenticateToken, async (req, res) => {
+// 🆕 دوال حذف الحساب والنشاطات - أضف هذا الكود
+app.delete('/api/user/account', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
+
+        // حذف جميع بيانات المستخدم
+        await pool.query('DELETE FROM sales WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM customers WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM user_activities WHERE user_id = $1', [userId]);
         
-        const userCheck = await pool.query(
-            'SELECT role FROM users WHERE id = $1',
+        // حذف المستخدم نفسه
+        await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+
+        res.json({
+            success: true,
+            message: 'تم حذف الحساب وجميع البيانات المرتبطة به بنجاح'
+        });
+
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        res.status(500).json({ error: 'خطأ في حذف الحساب' });
+    }
+});
+
+app.get('/api/user/activities', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const period = req.query.period || '7';
+
+        const activitiesResult = await pool.query(
+            `SELECT type, details, timestamp 
+             FROM user_activities 
+             WHERE user_id = $1 AND timestamp >= NOW() - INTERVAL '${period} days'
+             ORDER BY timestamp DESC`,
             [userId]
         );
 
-        if (!['admin', 'manager'].includes(userCheck.rows[0].role)) {
-            return res.status(403).json({ error: 'ليس لديك صلاحية لعرض الموظفين' });
-        }
+        res.json({
+            success: true,
+            activities: activitiesResult.rows
+        });
+
+    } catch (error) {
+        console.error('Error fetching activities:', error);
+        res.status(500).json({ error: 'خطأ في جلب سجل النشاطات' });
+    }
+});
+
+// 👥 إدارة الموظفين - معدل باستخدام نظام الصلاحيات الجديد
+app.get('/api/users/employees', authenticateToken, requireManager, async (req, res) => {
+    try {
+        const userId = req.user.userId;
 
         const employeesResult = await pool.query(
             `SELECT id, name, email, role, position, status, created_at, last_login 
              FROM users 
-             WHERE created_by = $1 OR role IN ('employee', 'viewer')
+             WHERE created_by = $1 OR (role IN ('employee', 'viewer') AND created_by IS NOT NULL)
              ORDER BY created_at DESC`,
             [userId]
         );
@@ -548,24 +613,22 @@ app.get('/api/users/employees', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Error fetching employees:', error);
         res.status(500).json({ error: 'خطأ في جلب بيانات الموظفين' });
     }
 });
 
-app.post('/api/users/employees', authenticateToken, async (req, res) => {
+app.post('/api/users/employees', authenticateToken, requireManager, async (req, res) => {
     try {
         const userId = req.user.userId;
         const { name, email, password, position, role, permissions } = req.body;
 
-        const userCheck = await pool.query(
-            'SELECT role FROM users WHERE id = $1',
-            [userId]
-        );
-
-        if (!['admin', 'manager'].includes(userCheck.rows[0].role)) {
-            return res.status(403).json({ error: 'ليس لديك صلاحية لإضافة موظفين' });
+        // التحقق من البيانات
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'الاسم والبريد الإلكتروني وكلمة المرور مطلوبة' });
         }
 
+        // التحقق من وجود البريد الإلكتروني
         const emailCheck = await pool.query(
             'SELECT id FROM users WHERE email = $1',
             [email]
@@ -575,14 +638,16 @@ app.post('/api/users/employees', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'البريد الإلكتروني مسجل مسبقاً' });
         }
 
+        // تشفير كلمة المرور
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
+        // إضافة الموظف
         const result = await pool.query(
-            `INSERT INTO users (name, email, password_hash, role, position, created_by) 
-             VALUES ($1, $2, $3, $4, $5, $6) 
+            `INSERT INTO users (name, email, password_hash, role, position, created_by, permissions) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7) 
              RETURNING id, name, email, role, position, created_at`,
-            [name, email, passwordHash, role, position, userId]
+            [name, email, passwordHash, role, position, userId, JSON.stringify(permissions || [])]
         );
 
         res.status(201).json({
@@ -592,7 +657,107 @@ app.post('/api/users/employees', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Error adding employee:', error);
         res.status(500).json({ error: 'خطأ في إضافة الموظف' });
+    }
+});
+
+app.put('/api/users/employees/:id', authenticateToken, requireManager, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const employeeId = req.params.id;
+        const { name, email, position, role, permissions } = req.body;
+
+        // التحقق من أن المستخدم يملك هذا الموظف
+        const employeeCheck = await pool.query(
+            'SELECT id FROM users WHERE id = $1 AND created_by = $2',
+            [employeeId, userId]
+        );
+
+        if (employeeCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'الموظف غير موجود أو ليس لديك صلاحية لتعديله' });
+        }
+
+        // تحديث بيانات الموظف
+        const result = await pool.query(
+            `UPDATE users 
+             SET name = $1, email = $2, position = $3, role = $4, permissions = $5
+             WHERE id = $6 
+             RETURNING id, name, email, role, position, created_at`,
+            [name, email, position, role, JSON.stringify(permissions || []), employeeId]
+        );
+
+        res.json({
+            success: true,
+            message: 'تم تحديث بيانات الموظف بنجاح',
+            employee: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error updating employee:', error);
+        res.status(500).json({ error: 'خطأ في تحديث بيانات الموظف' });
+    }
+});
+
+app.put('/api/users/employees/:id/status', authenticateToken, requireManager, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const employeeId = req.params.id;
+        const { status } = req.body;
+
+        // التحقق من أن المستخدم يملك هذا الموظف
+        const employeeCheck = await pool.query(
+            'SELECT id FROM users WHERE id = $1 AND created_by = $2',
+            [employeeId, userId]
+        );
+
+        if (employeeCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'الموظف غير موجود أو ليس لديك صلاحية لتعديله' });
+        }
+
+        // تحديث حالة الموظف
+        await pool.query(
+            'UPDATE users SET status = $1 WHERE id = $2',
+            [status, employeeId]
+        );
+
+        res.json({
+            success: true,
+            message: `تم ${status === 'active' ? 'تفعيل' : 'تعطيل'} الموظف بنجاح`
+        });
+
+    } catch (error) {
+        console.error('Error toggling employee status:', error);
+        res.status(500).json({ error: 'خطأ في تغيير حالة الموظف' });
+    }
+});
+
+app.delete('/api/users/employees/:id', authenticateToken, requireManager, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const employeeId = req.params.id;
+
+        // التحقق من أن المستخدم يملك هذا الموظف
+        const employeeCheck = await pool.query(
+            'SELECT id FROM users WHERE id = $1 AND created_by = $2',
+            [employeeId, userId]
+        );
+
+        if (employeeCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'الموظف غير موجود أو ليس لديك صلاحية لحذفه' });
+        }
+
+        // حذف الموظف
+        await pool.query('DELETE FROM users WHERE id = $1', [employeeId]);
+
+        res.json({
+            success: true,
+            message: 'تم حذف الموظف بنجاح'
+        });
+
+    } catch (error) {
+        console.error('Error deleting employee:', error);
+        res.status(500).json({ error: 'خطأ في حذف الموظف' });
     }
 });
 
