@@ -81,11 +81,12 @@ async function register(name, email, password) {
 }
 
 function logout() {
+    console.log('🚪 جاري تسجيل الخروج...');
     authToken = null;
     currentUser = null;
     localStorage.removeItem('datavision_token');
     localStorage.removeItem('datavision_user');
-    window.location.href = '/login';
+    window.location.href = 'login.html';
 }
 
 // إدارة العملاء
