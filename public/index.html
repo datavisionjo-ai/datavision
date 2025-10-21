@@ -23,7 +23,7 @@
                 <button class="tab-btn" onclick="switchTab('whatsapp')">📱 واتساب</button>
                 <button class="tab-btn" onclick="switchTab('assistant')">🤖 المساعد الذكي</button>
                 <button class="tab-btn" onclick="switchTab('settings')">⚙️ الإعدادات</button>
-                 <button class="tab-btn" onclick="window.location.href='profile.html'">👤 حسابي</button>
+                <button class="tab-btn" onclick="window.location.href='profile.html'">👤 حسابي</button>
             </div>
         </div>
 
@@ -51,14 +51,65 @@
                     </div>
                 </div>
 
-                <div class="charts-container">
-                    <div class="chart-box">
+                <!-- قسم تحليلات المحافظات الجديد -->
+                <div class="governorate-analysis" style="margin: 30px 0; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="color: #333; margin-bottom: 20px; font-size: 22px;">📍 تحليل توزيع العملاء حسب المحافظات</h3>
+                    <div id="governorateStats" class="stats-grid">
+                        <!-- سيتم ملؤها ديناميكياً -->
+                    </div>
+                </div>
+
+                <!-- قسم التحليلات المتقدمة -->
+                <div class="advanced-analytics" style="margin: 30px 0; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="color: #333; margin-bottom: 20px; font-size: 22px;">📈 تحليلات متقدمة</h3>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <!-- أكثر محافظة مبيعاً -->
+                        <div class="analysis-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px;">
+                            <h4 style="margin: 0 0 15px 0; font-size: 18px;">🏆 أعلى محافظة مبيعاً</h4>
+                            <div id="topSalesGovernorate" style="font-size: 28px; font-weight: bold; margin: 10px 0;">-</div>
+                            <div id="topSalesAmount" style="font-size: 16px; opacity: 0.9;">-</div>
+                        </div>
+                        
+                        <!-- أكثر محافظة عملاء -->
+                        <div class="analysis-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 25px; border-radius: 12px;">
+                            <h4 style="margin: 0 0 15px 0; font-size: 18px;">👥 أكثر محافظة عملاء</h4>
+                            <div id="topCustomersGovernorate" style="font-size: 28px; font-weight: bold; margin: 10px 0;">-</div>
+                            <div id="topCustomersCount" style="font-size: 16px; opacity: 0.9;">-</div>
+                        </div>
+                        
+                        <!-- متوسط المبيعات لكل عميل -->
+                        <div class="analysis-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 25px; border-radius: 12px;">
+                            <h4 style="margin: 0 0 15px 0; font-size: 18px;">💎 متوسط قيمة العميل</h4>
+                            <div id="avgCustomerValue" style="font-size: 28px; font-weight: bold; margin: 10px 0;">-</div>
+                            <div style="font-size: 14px; opacity: 0.9;">متوسط المبيعات لكل عميل</div>
+                        </div>
+                        
+                        <!-- معدل النشاط -->
+                        <div class="analysis-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 25px; border-radius: 12px;">
+                            <h4 style="margin: 0 0 15px 0; font-size: 18px;">⚡ معدل نشاط العملاء</h4>
+                            <div id="activityRate" style="font-size: 28px; font-weight: bold; margin: 10px 0;">-</div>
+                            <div style="font-size: 14px; opacity: 0.9;">نسبة العملاء النشطين</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 20px;">
+                    <div class="chart-box" style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         <h3>توزيع حالة العملاء</h3>
                         <canvas id="statusChart"></canvas>
                     </div>
-                    <div class="chart-box">
+                    <div class="chart-box" style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3>توزيع العملاء حسب المحافظات</h3>
+                        <canvas id="governorateChart"></canvas>
+                    </div>
+                    <div class="chart-box" style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         <h3>مبيعات آخر 7 أيام</h3>
                         <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="chart-box" style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3>المبيعات حسب المحافظات</h3>
+                        <canvas id="salesByGovernorateChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -288,6 +339,24 @@
                     <input type="email" id="customerEmail">
                 </div>
                 <div class="form-group">
+                    <label>المحافظة *</label>
+                    <select id="customerGovernorate" required>
+                        <option value="">اختر المحافظة</option>
+                        <option value="عمان">عمان</option>
+                        <option value="إربد">إربد</option>
+                        <option value="الزرقاء">الزرقاء</option>
+                        <option value="البلقاء">البلقاء</option>
+                        <option value="المفرق">المفرق</option>
+                        <option value="جرش">جرش</option>
+                        <option value="عجلون">عجلون</option>
+                        <option value="مادبا">مادبا</option>
+                        <option value="الكرك">الكرك</option>
+                        <option value="الطفيلة">الطفيلة</option>
+                        <option value="معان">معان</option>
+                        <option value="العقبة">العقبة</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>حالة العميل</label>
                     <select id="customerStatus">
                         <option value="active">نشط</option>
@@ -360,9 +429,7 @@ console.log('🔐 حالة التوكن:', {
     datavision_user: !!localStorage.getItem('datavision_user'),
     token: !!localStorage.getItem('token'),
     user: !!localStorage.getItem('user')
-</script>
+});
+    </script>
 </body>
 </html>
-
-
-
