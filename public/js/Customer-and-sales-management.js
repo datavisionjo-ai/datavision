@@ -511,7 +511,298 @@ function sendWhatsApp(phone) {
     const message = encodeURIComponent('مرحباً! كيف يمكنني مساعدتك؟');
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
 }
+// 📊 مخطط حالة العملاء - جديد
+function updateStatusChart() {
+    const statusCtx = document.getElementById('statusChart');
+    if (!statusCtx) {
+        console.log('❌ مخطط الحالة غير موجود');
+        return;
+    }
 
+    // إحصائيات حالة العملاء
+    const statusCounts = {
+        active: customers.filter(c => c.status === 'active').length,
+        inactive: customers.filter(c => c.status !== 'active').length
+    };
+
+    // إنشاء المخطط إذا لم يكن موجوداً
+    if (window.statusChartInstance) {
+        window.statusChartInstance.destroy();
+    }
+
+    window.statusChartInstance = new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['نشط', 'غير نشط'],
+            datasets: [{
+                data: [statusCounts.active, statusCounts.inactive],
+                backgroundColor: ['#10b981', '#6b7280'],
+                borderWidth: 2,
+                borderColor: '#1f2937'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    rtl: true,
+                    labels: {
+                        color: '#f3f4f6',
+                        font: {
+                            family: 'Cairo, sans-serif'
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'توزيع العملاء حسب الحالة',
+                    color: '#f3f4f6',
+                    font: {
+                        family: 'Cairo, sans-serif',
+                        size: 16
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 🗺️ مخطط المحافظات - جديد
+function updateGovernorateChart() {
+    const govCtx = document.getElementById('governorateChart');
+    if (!govCtx) {
+        console.log('❌ مخطط المحافظات غير موجود');
+        return;
+    }
+
+    // تجميع العملاء حسب المحافظة
+    const governorateData = {};
+    customers.forEach(customer => {
+        const gov = customer.governorate || 'غير محدد';
+        governorateData[gov] = (governorateData[gov] || 0) + 1;
+    });
+
+    const labels = Object.keys(governorateData);
+    const data = Object.values(governorateData);
+
+    // إنشاء المخطط
+    if (window.govChartInstance) {
+        window.govChartInstance.destroy();
+    }
+
+    window.govChartInstance = new Chart(govCtx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'عدد العملاء',
+                data: data,
+                backgroundColor: '#3b82f6',
+                borderColor: '#1d4ed8',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'توزيع العملاء حسب المحافظة',
+                    color: '#f3f4f6',
+                    font: {
+                        family: 'Cairo, sans-serif',
+                        size: 16
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#f3f4f6'
+                    },
+                    grid: {
+                        color: '#374151'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#f3f4f6'
+                    },
+                    grid: {
+                        color: '#374151'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 📈 مخطط المبيعات - جديد
+function updateSalesChart() {
+    const salesCtx = document.getElementById('salesChart');
+    if (!salesCtx) {
+        console.log('❌ مخطط المبيعات غير موجود');
+        return;
+    }
+
+    // تجميع المبيعات حسب الشهر
+    const monthlySales = {};
+    sales.forEach(sale => {
+        const date = new Date(sale.sale_date);
+        const monthYear = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        
+        if (!monthlySales[monthYear]) {
+            monthlySales[monthYear] = 0;
+        }
+        monthlySales[monthYear] += parseFloat(sale.amount || 0);
+    });
+
+    const labels = Object.keys(monthlySales).sort();
+    const data = labels.map(label => monthlySales[label]);
+
+    // إنشاء المخطط
+    if (window.salesChartInstance) {
+        window.salesChartInstance.destroy();
+    }
+
+    window.salesChartInstance = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'المبيعات (دينار)',
+                data: data,
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: '#3b82f6',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'تطور المبيعات الشهري',
+                    color: '#f3f4f6',
+                    font: {
+                        family: 'Cairo, sans-serif',
+                        size: 16
+                    }
+                },
+                legend: {
+                    labels: {
+                        color: '#f3f4f6',
+                        font: {
+                            family: 'Cairo, sans-serif'
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#f3f4f6'
+                    },
+                    grid: {
+                        color: '#374151'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#f3f4f6'
+                    },
+                    grid: {
+                        color: '#374151'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 💰 مخطط المبيعات حسب المحافظة - جديد
+function updateSalesByGovernorateChart() {
+    const salesGovCtx = document.getElementById('salesByGovernorateChart');
+    if (!salesGovCtx) {
+        console.log('❌ مخطط المبيعات حسب المحافظة غير موجود');
+        return;
+    }
+
+    // تجميع المبيعات حسب المحافظة
+    const salesByGovernorate = {};
+    sales.forEach(sale => {
+        const customer = customers.find(c => c.id == sale.customer_id);
+        if (customer) {
+            const gov = customer.governorate || 'غير محدد';
+            if (!salesByGovernorate[gov]) {
+                salesByGovernorate[gov] = 0;
+            }
+            salesByGovernorate[gov] += parseFloat(sale.amount || 0);
+        }
+    });
+
+    const labels = Object.keys(salesByGovernorate);
+    const data = Object.values(salesByGovernorate);
+
+    // إنشاء المخطط
+    if (window.salesGovChartInstance) {
+        window.salesGovChartInstance.destroy();
+    }
+
+    window.salesGovChartInstance = new Chart(salesGovCtx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: [
+                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
+                    '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'
+                ],
+                borderWidth: 2,
+                borderColor: '#1f2937'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    rtl: true,
+                    labels: {
+                        color: '#f3f4f6',
+                        font: {
+                            family: 'Cairo, sans-serif'
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'توزيع المبيعات حسب المحافظة',
+                    color: '#f3f4f6',
+                    font: {
+                        family: 'Cairo, sans-serif',
+                        size: 16
+                    }
+                }
+            }
+        }
+    });
+}
+
+// جعل الدوال الجديدة متاحة globally
+window.updateStatusChart = updateStatusChart;
+window.updateGovernorateChart = updateGovernorateChart;
+window.updateSalesChart = updateSalesChart;
+window.updateSalesByGovernorateChart = updateSalesByGovernorateChart;
 // جعل الدوال متاحة globally
 window.renderCustomers = renderCustomers;
 window.togglePurchases = togglePurchases;
@@ -549,3 +840,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 500);
 });
+
