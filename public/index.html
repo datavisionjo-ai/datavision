@@ -118,7 +118,7 @@
             <div id="customers" class="tab-content">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
                     <h2 class="page-title-black">إدارة العملاء</h2>
-                    <button class="btn btn-primary" onclick="openAddCustomerModal()">➕ إضافة عميل جديد</button>
+                    <button class="btn btn-primary" onclick="customerManager.openAddCustomerModal()">➕ إضافة عميل جديد</button>
                 </div>
 
                 <div class="search-box">
@@ -325,7 +325,7 @@
                 <h2 id="modalTitle">إضافة عميل جديد</h2>
                 <button class="close-btn" onclick="closeModal('customerModal')">&times;</button>
             </div>
-            <form onsubmit="saveCustomer(event)">
+            <form onsubmit="customerManager.saveCustomer(event)">
                 <div class="form-group">
                     <label>الاسم الكامل *</label>
                     <input type="text" id="customerName" required>
@@ -382,7 +382,7 @@
                 <h2>إضافة عملية بيع</h2>
                 <button class="close-btn" onclick="closeModal('saleModal')">&times;</button>
             </div>
-            <form onsubmit="saveSale(event)">
+            <form onsubmit="salesManager.saveSale(event)">
                 <input type="hidden" id="saleCustomerId">
                 <div class="form-group">
                     <label>المبلغ (دينار) *</label>
@@ -406,143 +406,14 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- ✅ هذا الترتيب الجديد - بدون حذف أي ملف -->
-<!-- قبل </body> -->
-<script src="js/auth-system.js"></script>
-<script src="js/data-manager.js"></script>
-<script src="js/dashboard-system.js"></script>
-<script src="js/customer-manager.js"></script>
-<script src="js/sales-manager.js"></script>
-<script src="js/app.js"></script>
 
-<script>
-// 🔧 التهيئة النهائية للموقع
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('🚀 بدء التهيئة النهائية...');
-    
-    try {
-        // 1. تهيئة النظام الموحد للبيانات
-        await unifiedDataSystem.initialize();
-        
-        // 2. تهيئة إصلاح المحافظات
-        await governorateFix.initialize();
-        
-        // 3. تهيئة عرض العملاء
-        await customerDisplayFix.initialize();
-        
-        // 4. تحديث كل شيء
-        await customerDisplayFix.renderCustomers();
-        await customerDisplayFix.renderSales();
-        await governorateFix.updateFullDashboard();
-        
-        console.log('✅ جميع الأنظمة جاهزة للعمل!');
-        
-    } catch (error) {
-        console.error('❌ خطأ في التهيئة النهائية:', error);
-    }
-});
+    <!-- الأنظمة الجديدة -->
+    <script src="js/auth-system.js"></script>
+    <script src="js/data-manager.js"></script>
+    <script src="js/dashboard-system.js"></script>
+    <script src="js/customer-manager.js"></script>
+    <script src="js/sales-manager.js"></script>
+    <script src="js/app.js"></script>
 
-// 🔄 ربط الأزرار بالدوال الجديدة
-function openAddCustomerModal() {
-    customerDisplayFix.editingCustomerId = null;
-    document.getElementById('customerModal').classList.add('active');
-    
-    // تفريغ النموذج
-    document.getElementById('customerName').value = '';
-    document.getElementById('customerPhone').value = '';
-    document.getElementById('customerEmail').value = '';
-    document.getElementById('customerGovernorate').value = '';
-    document.getElementById('customerStatus').value = 'active';
-    document.getElementById('customerNotes').value = '';
-}
-
-// 💾 حفظ العميل
-async function saveCustomer(e) {
-    e.preventDefault();
-    
-    const customerData = {
-        name: document.getElementById('customerName').value,
-        phone: document.getElementById('customerPhone').value,
-        email: document.getElementById('customerEmail').value,
-        governorate: document.getElementById('customerGovernorate').value,
-        status: document.getElementById('customerStatus').value,
-        notes: document.getElementById('customerNotes').value
-    };
-    
-    try {
-        if (customerDisplayFix.editingCustomerId) {
-            await unifiedDataSystem.updateCustomer(customerDisplayFix.editingCustomerId, customerData);
-            showNotification('تم تحديث العميل بنجاح', 'success');
-        } else {
-            await unifiedDataSystem.addCustomer(customerData);
-            showNotification('تم إضافة العميل بنجاح', 'success');
-        }
-        
-        // إغلاق النافذة وتحديث البيانات
-        document.getElementById('customerModal').classList.remove('active');
-        await customerDisplayFix.renderCustomers();
-        await governorateFix.updateFullDashboard();
-        
-    } catch (error) {
-        showNotification('خطأ في حفظ العميل: ' + error.message, 'error');
-    }
-}
-
-// 💰 حفظ البيع
-async function saveSale(e) {
-    e.preventDefault();
-    
-    const saleData = {
-        customer_id: document.getElementById('saleCustomerId').value,
-        amount: document.getElementById('saleAmount').value,
-        sale_date: document.getElementById('saleDate').value,
-        description: document.getElementById('saleDescription').value
-    };
-    
-    try {
-        await unifiedDataSystem.addSale(saleData);
-        
-        // إغلاق النافذة وتحديث البيانات
-        document.getElementById('saleModal').classList.remove('active');
-        await customerDisplayFix.renderSales();
-        await customerDisplayFix.renderCustomers();
-        await governorateFix.updateFullDashboard();
-        
-        showNotification('تم إضافة البيع بنجاح', 'success');
-        
-    } catch (error) {
-        showNotification('خطأ في إضافة البيع: ' + error.message, 'error');
-    }
-}
-
-// 🔍 البحث في العملاء
-function filterCustomers() {
-    const searchTerm = document.getElementById('customerSearch').value.toLowerCase();
-    const cards = document.querySelectorAll('.customer-card');
-    
-    cards.forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(searchTerm) ? 'block' : 'none';
-    });
-}
-
-// ✨ دالة الإشعارات
-function showNotification(message, type = 'success') {
-    const notification = document.getElementById('notification');
-    if (notification) {
-        notification.textContent = message;
-        notification.className = `notification ${type} show`;
-        
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 4000);
-    }
-}
-</script>
 </body>
 </html>
-
-
-
-
-
