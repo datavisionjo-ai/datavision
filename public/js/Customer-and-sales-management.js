@@ -1,6 +1,37 @@
-// Customer-and-sales-management.js - معدل كامل مع التحليلات
+// Customer-and-sales-management.js - معدل للعمل مع API
+let customers = [];
+let sales = [];
+let editingCustomerId = null;
 
-function renderCustomers() {
+// 🔄 تهيئة البيانات من السيرفر
+async function initializeData() {
+    try {
+        console.log('🔄 جاري تحميل البيانات من السيرفر...');
+        
+        // تحميل العملاء من API
+        customers = await getCustomers();
+        console.log('✅ تم تحميل العملاء:', customers.length);
+        
+        // تحميل المبيعات من API
+        sales = await getSales();
+        console.log('✅ تم تحميل المبيعات:', sales.length);
+        
+        // عرض البيانات
+        renderCustomers();
+        renderSales();
+        updateDashboard();
+        updateCharts();
+        updateGovernorateAnalysis();
+        updateAdvancedAnalytics();
+        
+    } catch (error) {
+        console.error('❌ خطأ في تحميل البيانات:', error);
+        showNotification('خطأ في تحميل البيانات', 'error');
+    }
+}
+
+// 👥 عرض العملاء - معدل
+async function renderCustomers() {
     const container = document.getElementById('customersList');
     if (!container) {
         console.error('❌ عنصر customersList غير موجود');
@@ -14,10 +45,11 @@ function renderCustomers() {
         return;
     }
 
-    customers.forEach(customer => {
-        if (!customer) return;
+    // تحميل المبيعات لكل عميل
+    for (const customer of customers) {
+        if (!customer) continue;
         
-        const purchases = getCustomerPurchases(customer.id);
+        const purchases = await getCustomerPurchases(customer.id);
         
         const card = document.createElement('div');
         card.className = `customer-card ${customer.status || 'active'}`;
@@ -45,7 +77,7 @@ function renderCustomers() {
                 </div>
                 <div id="purchases-${customer.id}" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
                     ${purchases.sales.map(sale => {
-                        const saleDate = sale.date || sale.sale_date;
+                        const saleDate = sale.sale_date || sale.date;
                         const saleAmount = parseFloat(sale.amount || 0);
                         const saleDesc = sale.description || '';
                         
@@ -73,37 +105,42 @@ function renderCustomers() {
             <div class="customer-actions">
                 <button class="btn btn-primary" onclick="editCustomer('${customer.id}')" style="padding: 8px 16px; font-size: 14px;">✏️ تعديل</button>
                 <button class="btn btn-success" onclick="openSaleModal('${customer.id}')" style="padding: 8px 16px; font-size: 14px;">💰 إضافة بيع</button>
-                <button class="btn btn-whatsapp" onclick="sendWhatsApp('${customer.id}')" style="padding: 8px 16px; font-size: 14px;">📱 واتساب</button>
+                <button class="btn btn-whatsapp" onclick="sendWhatsApp('${customer.phone}')" style="padding: 8px 16px; font-size: 14px;">📱 واتساب</button>
                 <button class="btn btn-danger" onclick="deleteCustomer('${customer.id}')" style="padding: 8px 16px; font-size: 14px;">🗑️ حذف</button>
             </div>
         `;
         container.appendChild(card);
-    });
-}
-
-function togglePurchases(customerId) {
-    const purchasesDiv = document.getElementById(`purchases-${customerId}`);
-    const toggleText = document.getElementById(`toggle-text-${customerId}`);
-    
-    if (purchasesDiv.style.maxHeight === '0px' || purchasesDiv.style.maxHeight === '') {
-        purchasesDiv.style.maxHeight = purchasesDiv.scrollHeight + 'px';
-        toggleText.textContent = 'إخفاء المشتريات ▲';
-    } else {
-        purchasesDiv.style.maxHeight = '0px';
-        toggleText.textContent = 'عرض المشتريات ▼';
     }
 }
 
-function filterCustomers() {
-    const search = document.getElementById('customerSearch').value.toLowerCase();
-    const cards = document.querySelectorAll('.customer-card');
-    
-    cards.forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(search) ? 'block' : 'none';
-    });
+// 🔍 الحصول على مشتريات العميل من API
+async function getCustomerPurchases(customerId) {
+    try {
+        if (!sales || !Array.isArray(sales)) {
+            return { sales: [], count: 0, total: 0 };
+        }
+        
+        const customerSales = sales.filter(s => {
+            if (!s) return false;
+            return s.customer_id == customerId;
+        });
+        
+        const totalAmount = customerSales.reduce((sum, sale) => {
+            return sum + parseFloat(sale.amount || 0);
+        }, 0);
+        
+        return {
+            sales: customerSales,
+            count: customerSales.length,
+            total: totalAmount
+        };
+    } catch (error) {
+        console.error('❌ خطأ في جلب مشتريات العميل:', error);
+        return { sales: [], count: 0, total: 0 };
+    }
 }
 
+// ➕ فتح نافذة إضافة عميل
 function openAddCustomerModal() {
     editingCustomerId = null;
     document.getElementById('modalTitle').textContent = 'إضافة عميل جديد';
@@ -116,8 +153,9 @@ function openAddCustomerModal() {
     document.getElementById('customerModal').classList.add('active');
 }
 
+// ✏️ تعديل عميل
 function editCustomer(id) {
-    const customer = customers.find(c => c.id === id);
+    const customer = customers.find(c => c.id == id);
     if (!customer) return;
 
     editingCustomerId = id;
@@ -131,54 +169,58 @@ function editCustomer(id) {
     document.getElementById('customerModal').classList.add('active');
 }
 
-function saveCustomer(e) {
+// 💾 حفظ عميل - معدل للعمل مع API
+async function saveCustomer(e) {
     e.preventDefault();
 
-    const customer = {
-        id: editingCustomerId || 'c_' + Date.now(),
+    const customerData = {
         name: document.getElementById('customerName').value,
         phone: document.getElementById('customerPhone').value,
         email: document.getElementById('customerEmail').value,
         governorate: document.getElementById('customerGovernorate').value,
         status: document.getElementById('customerStatus').value,
-        notes: document.getElementById('customerNotes').value,
-        createdAt: new Date().toISOString()
+        notes: document.getElementById('customerNotes').value
     };
 
-    if (editingCustomerId) {
-        const index = customers.findIndex(c => c.id === editingCustomerId);
-        customers[index] = { ...customers[index], ...customer };
-        showNotification('تم تحديث بيانات العميل بنجاح!', 'success');
-    } else {
-        customers.push(customer);
-        showNotification('تم إضافة العميل بنجاح!', 'success');
-    }
+    try {
+        if (editingCustomerId) {
+            // تحديث عميل موجود
+            await updateCustomer(editingCustomerId, customerData);
+            showNotification('تم تحديث بيانات العميل بنجاح!', 'success');
+        } else {
+            // إضافة عميل جديد
+            await addCustomer(customerData);
+            showNotification('تم إضافة العميل بنجاح!', 'success');
+        }
 
-    saveData();
-    renderCustomers();
-    updateDashboard();
-    updateCharts();
-    updateGovernorateAnalysis();
-    updateAdvancedAnalytics();
-    closeModal('customerModal');
+        // إعادة تحميل البيانات
+        await initializeData();
+        closeModal('customerModal');
+
+    } catch (error) {
+        console.error('❌ خطأ في حفظ العميل:', error);
+        showNotification('خطأ في حفظ بيانات العميل: ' + error.message, 'error');
+    }
 }
 
-function deleteCustomer(id) {
+// 🗑️ حذف عميل - معدل للعمل مع API
+async function deleteCustomer(id) {
     if (!confirm('هل أنت متأكد من حذف هذا العميل؟')) return;
 
-    customers = customers.filter(c => c.id !== id);
-    sales = sales.filter(s => s.customerId !== id);
-    
-    saveData();
-    renderCustomers();
-    renderSales();
-    updateDashboard();
-    updateCharts();
-    updateGovernorateAnalysis();
-    updateAdvancedAnalytics();
-    showNotification('تم حذف العميل بنجاح!', 'success');
+    try {
+        await deleteCustomerAPI(id);
+        showNotification('تم حذف العميل بنجاح!', 'success');
+        
+        // إعادة تحميل البيانات
+        await initializeData();
+        
+    } catch (error) {
+        console.error('❌ خطأ في حذف العميل:', error);
+        showNotification('خطأ في حذف العميل: ' + error.message, 'error');
+    }
 }
 
+// 💰 فتح نافذة إضافة بيع
 function openSaleModal(customerId) {
     document.getElementById('saleCustomerId').value = customerId;
     document.getElementById('saleAmount').value = '';
@@ -187,31 +229,33 @@ function openSaleModal(customerId) {
     document.getElementById('saleModal').classList.add('active');
 }
 
-function saveSale(e) {
+// 💾 حفظ بيع - معدل للعمل مع API
+async function saveSale(e) {
     e.preventDefault();
 
-    const sale = {
-        id: 's_' + Date.now(),
-        customerId: document.getElementById('saleCustomerId').value,
+    const saleData = {
+        customer_id: document.getElementById('saleCustomerId').value,
         amount: document.getElementById('saleAmount').value,
-        date: document.getElementById('saleDate').value,
-        description: document.getElementById('saleDescription').value,
-        createdAt: new Date().toISOString()
+        sale_date: document.getElementById('saleDate').value,
+        description: document.getElementById('saleDescription').value
     };
 
-    sales.push(sale);
-    saveData();
-    renderSales();
-    renderCustomers();
-    updateDashboard();
-    updateCharts();
-    updateGovernorateAnalysis();
-    updateAdvancedAnalytics();
-    closeModal('saleModal');
-    showNotification('تم إضافة عملية البيع بنجاح!', 'success');
+    try {
+        await addSale(saleData);
+        showNotification('تم إضافة عملية البيع بنجاح!', 'success');
+        
+        // إعادة تحميل البيانات
+        await initializeData();
+        closeModal('saleModal');
+
+    } catch (error) {
+        console.error('❌ خطأ في إضافة البيع:', error);
+        showNotification('خطأ في إضافة عملية البيع: ' + error.message, 'error');
+    }
 }
 
-function renderSales() {
+// 📋 عرض المبيعات - معدل
+async function renderSales() {
     const container = document.getElementById('salesList');
     if (!container) {
         console.error('❌ عنصر salesList غير موجود');
@@ -225,12 +269,12 @@ function renderSales() {
         return;
     }
 
-    const sortedSales = [...sales].sort((a, b) => new Date(b.date || b.sale_date) - new Date(a.date || a.sale_date));
+    const sortedSales = [...sales].sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
 
     sortedSales.forEach(sale => {
         if (!sale) return;
         
-        const customer = customers.find(c => c.id === (sale.customerId || sale.customer_id));
+        const customer = customers.find(c => c.id == sale.customer_id);
         const item = document.createElement('div');
         item.className = 'sale-item';
         item.innerHTML = `
@@ -239,7 +283,7 @@ function renderSales() {
                     <div style="font-weight: bold; color: var(--dark); margin-bottom: 5px;">
                         ${customer ? customer.name : 'عميل محذوف'}
                     </div>
-                    <div class="sale-date">${new Date(sale.date || sale.sale_date).toLocaleDateString('ar-JO', { 
+                    <div class="sale-date">${new Date(sale.sale_date).toLocaleDateString('ar-JO', { 
                         year: 'numeric', 
                         month: 'long', 
                         day: 'numeric' 
@@ -253,31 +297,13 @@ function renderSales() {
     });
 }
 
-function getCustomerPurchases(customerId) {
-    if (!sales || !Array.isArray(sales)) {
-        return { sales: [], count: 0, total: 0 };
-    }
-    
-    const customerSales = sales.filter(s => {
-        if (!s) return false;
-        return s.customer_id === customerId || s.customerId === customerId;
-    });
-    
-    const totalAmount = customerSales.reduce((sum, sale) => {
-        return sum + parseFloat(sale.amount || 0);
-    }, 0);
-    
-    return {
-        sales: customerSales,
-        count: customerSales.length,
-        total: totalAmount
-    };
-}
-
-// دالة تحديث تحليل المحافظات
+// 📍 تحديث تحليل المحافظات - معدل
 function updateGovernorateAnalysis() {
     const governorateStats = document.getElementById('governorateStats');
-    if (!governorateStats) return;
+    if (!governorateStats) {
+        console.error('❌ عنصر governorateStats غير موجود');
+        return;
+    }
 
     // تجميع البيانات حسب المحافظات
     const governorateData = {};
@@ -301,7 +327,7 @@ function updateGovernorateAnalysis() {
 
     // حساب المبيعات لكل محافظة
     sales.forEach(sale => {
-        const customer = customers.find(c => c.id === (sale.customerId || sale.customer_id));
+        const customer = customers.find(c => c.id == sale.customer_id);
         if (customer) {
             const gov = customer.governorate || 'غير محدد';
             if (governorateData[gov]) {
@@ -316,6 +342,11 @@ function updateGovernorateAnalysis() {
     
     const sortedGovernorates = Object.entries(governorateData)
         .sort((a, b) => b[1].customers - a[1].customers);
+
+    if (sortedGovernorates.length === 0) {
+        governorateStats.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 40px;">لا توجد بيانات للمحافظات حتى الآن.</p>';
+        return;
+    }
 
     sortedGovernorates.forEach(([gov, data]) => {
         const card = document.createElement('div');
@@ -347,12 +378,14 @@ function updateGovernorateAnalysis() {
     });
 }
 
-// دالة تحديث التحليلات المتقدمة
+// 📈 تحديث التحليلات المتقدمة - معدل
 function updateAdvancedAnalytics() {
+    console.log('🔄 تحديث التحليلات المتقدمة...');
+    
     // حساب أعلى محافظة مبيعاً
     const salesByGovernorate = {};
     sales.forEach(sale => {
-        const customer = customers.find(c => c.id === (sale.customerId || sale.customer_id));
+        const customer = customers.find(c => c.id == sale.customer_id);
         if (customer) {
             const gov = customer.governorate || 'غير محدد';
             if (!salesByGovernorate[gov]) {
@@ -400,32 +433,83 @@ function updateAdvancedAnalytics() {
     const activeCount = customers.filter(c => c.status === 'active').length;
     const activityRate = customers.length > 0 ? (activeCount / customers.length * 100) : 0;
     document.getElementById('activityRate').textContent = `${activityRate.toFixed(1)}%`;
+
+    console.log('✅ تم تحديث التحليلات المتقدمة');
 }
 
-function addMessageToChat(message, sender) {
-    const chatContainer = document.getElementById('chatContainer');
-    if (!chatContainer) return;
+// 🔄 تحديث لوحة التحكم - معدل
+function updateDashboard() {
+    console.log('🔄 تحديث لوحة التحكم...');
     
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('chat-message');
-    messageDiv.classList.add(sender === 'ai' ? 'ai-message' : 'user-message');
+    // إجمالي العملاء
+    document.getElementById('totalCustomers').textContent = customers.length;
     
-    messageDiv.innerHTML = `
-        <div class="message-avatar">${sender === 'ai' ? '🤖' : '👤'}</div>
-        <div class="message-content">
-            <div class="message-text">${message}</div>
-            <div class="message-time">${new Date().toLocaleTimeString()}</div>
-        </div>
-    `;
+    // العملاء النشطين
+    const activeCustomers = customers.filter(c => c.status === 'active').length;
+    document.getElementById('activeCustomers').textContent = activeCustomers;
     
-    chatContainer.appendChild(messageDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    // العملاء غير النشطين
+    const inactiveCustomers = customers.filter(c => c.status !== 'active').length;
+    document.getElementById('inactiveCustomers').textContent = inactiveCustomers;
+    
+    // إجمالي المبيعات
+    const totalSalesAmount = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+    document.getElementById('totalSales').textContent = `${totalSalesAmount.toFixed(2)} دينار`;
+
+    console.log('✅ تم تحديث لوحة التحكم');
 }
 
-function handleKeyPress(event) {
-    if (event.key === 'Enter') {
-        sendFreeMessage();
+// 📊 تحديث الرسوم البيانية - معدل
+function updateCharts() {
+    console.log('🔄 تحديث الرسوم البيانية...');
+    
+    // تحديث مخطط حالة العملاء
+    updateStatusChart();
+    
+    // تحديث مخطط المحافظات
+    updateGovernorateChart();
+    
+    // تحديث مخطط المبيعات
+    updateSalesChart();
+    
+    // تحديث مخطط المبيعات حسب المحافظة
+    updateSalesByGovernorateChart();
+
+    console.log('✅ تم تحديث الرسوم البيانية');
+}
+
+// 🎯 دوال مساعدة
+function togglePurchases(customerId) {
+    const purchasesDiv = document.getElementById(`purchases-${customerId}`);
+    const toggleText = document.getElementById(`toggle-text-${customerId}`);
+    
+    if (purchasesDiv.style.maxHeight === '0px' || purchasesDiv.style.maxHeight === '') {
+        purchasesDiv.style.maxHeight = purchasesDiv.scrollHeight + 'px';
+        toggleText.textContent = 'إخفاء المشتريات ▲';
+    } else {
+        purchasesDiv.style.maxHeight = '0px';
+        toggleText.textContent = 'عرض المشتريات ▼';
     }
+}
+
+function filterCustomers() {
+    const search = document.getElementById('customerSearch').value.toLowerCase();
+    const cards = document.querySelectorAll('.customer-card');
+    
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(search) ? 'block' : 'none';
+    });
+}
+
+function sendWhatsApp(phone) {
+    if (!phone) {
+        showNotification('رقم الهاتف غير متوفر', 'error');
+        return;
+    }
+    
+    const message = encodeURIComponent('مرحباً! كيف يمكنني مساعدتك؟');
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
 }
 
 // جعل الدوال متاحة globally
@@ -439,7 +523,29 @@ window.deleteCustomer = deleteCustomer;
 window.openSaleModal = openSaleModal;
 window.saveSale = saveSale;
 window.renderSales = renderSales;
-window.addMessageToChat = addMessageToChat;
-window.handleKeyPress = handleKeyPress;
 window.updateGovernorateAnalysis = updateGovernorateAnalysis;
 window.updateAdvancedAnalytics = updateAdvancedAnalytics;
+window.updateDashboard = updateDashboard;
+window.updateCharts = updateCharts;
+window.initializeData = initializeData;
+window.sendWhatsApp = sendWhatsApp;
+
+// 🚀 تهيئة البيانات عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 Customer-and-sales-management.js محمل');
+    
+    // الانتظار قليلاً لضمان تحميل جميع الملفات
+    setTimeout(() => {
+        if (typeof getCustomers === 'function' && typeof getSales === 'function') {
+            initializeData();
+        } else {
+            console.error('❌ دوال API غير محملة');
+            // إعادة المحاولة بعد ثانية
+            setTimeout(() => {
+                if (typeof getCustomers === 'function') {
+                    initializeData();
+                }
+            }, 1000);
+        }
+    }, 500);
+});
