@@ -668,9 +668,142 @@ document.addEventListener('DOMContentLoaded', function() {
         
     }, 1000);
 });
+        
+<script>
+// 🔍 كود تشخيص المشكلة - بدون حذف أي ملف
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 بدء تشخيص المشكلة...');
+    
+    // انتظر تحميل جميع الملفات
+    setTimeout(function() {
+        console.log('=== 🔍 تشخيص النظام ===');
+        
+        // 1. فحص المتغيرات الأساسية
+        console.log('📊 المتغيرات:', {
+            customers: typeof customers !== 'undefined' ? customers.length : 'غير معرف',
+            sales: typeof sales !== 'undefined' ? sales.length : 'غير معرف',
+            settings: typeof settings !== 'undefined' ? 'موجود' : 'غير معرف'
+        });
+        
+        // 2. فحص العناصر في الـ HTML
+        console.log('🎯 العناصر في الـ HTML:', {
+            customersList: !!document.getElementById('customersList'),
+            salesList: !!document.getElementById('salesList'),
+            governorateStats: !!document.getElementById('governorateStats'),
+            totalCustomers: !!document.getElementById('totalCustomers')
+        });
+        
+        // 3. فحص الدوال الأساسية
+        console.log('🛠️ الدوال المتاحة:', {
+            renderCustomers: typeof renderCustomers,
+            renderSales: typeof renderSales, 
+            updateDashboard: typeof updateDashboard,
+            init: typeof init,
+            initializeData: typeof initializeData
+        });
+        
+        // 4. فحص البيانات الفعلية
+        if (typeof customers !== 'undefined') {
+            console.log('👥 عينة من العملاء:', customers.slice(0, 2));
+        }
+        if (typeof sales !== 'undefined') {
+            console.log('💰 عينة من المبيعات:', sales.slice(0, 2));
+        }
+        
+        console.log('=== 🔍 نهاية التشخيص ===');
+        
+        // محاولة تشغيل النظام إذا كان جاهزاً
+        attemptToRunSystem();
+        
+    }, 2000);
+});
+
+function attemptToRunSystem() {
+    console.log('🔄 محاولة تشغيل النظام...');
+    
+    // حاول مع Basic-data أولاً
+    if (typeof init === 'function') {
+        console.log('🚀 تشغيل init من Basic-data...');
+        init();
+        return;
+    }
+    
+    // إذا ما اشتغل، جرب Customer-and-sales
+    if (typeof initializeData === 'function') {
+        console.log('🚀 تشغيل initializeData من Customer-and-sales...');
+        initializeData();
+        return;
+    }
+    
+    // إذا ولا وحدة اشتغلت، شوف إذا في بيانات وعرضها مباشرة
+    if (typeof customers !== 'undefined' && customers.length > 0) {
+        console.log('📝 عرض البيانات مباشرة...');
+        displayDataDirectly();
+        return;
+    }
+    
+    console.log('❌ ما في نظام جاهز للتشغيل');
+}
+
+function displayDataDirectly() {
+    console.log('🎨 عرض البيانات مباشرة...');
+    
+    // عرض العملاء إذا في
+    if (typeof customers !== 'undefined' && customers.length > 0) {
+        const container = document.getElementById('customersList');
+        if (container) {
+            container.innerHTML = customers.map(customer => `
+                <div class="customer-card">
+                    <h3>${customer.name}</h3>
+                    <p>📱 ${customer.phone}</p>
+                    <p>📍 ${customer.governorate || 'غير محدد'}</p>
+                </div>
+            `).join('');
+            console.log('✅ تم عرض العملاء مباشرة');
+        }
+    }
+    
+    // عرض المبيعات إذا في
+    if (typeof sales !== 'undefined' && sales.length > 0) {
+        const container = document.getElementById('salesList');
+        if (container) {
+            container.innerHTML = sales.map(sale => {
+                const customer = customers.find(c => c.id == sale.customer_id);
+                return `
+                    <div class="sale-item">
+                        <strong>${customer ? customer.name : 'عميل غير معروف'}</strong>
+                        <span>${parseFloat(sale.amount).toFixed(2)} دينار</span>
+                    </div>
+                `;
+            }).join('');
+            console.log('✅ تم عرض المبيعات مباشرة');
+        }
+    }
+    
+    // تحديث الإحصائيات إذا في
+    updateStatsDirectly();
+}
+
+function updateStatsDirectly() {
+    console.log('📈 تحديث الإحصائيات مباشرة...');
+    
+    if (typeof customers !== 'undefined') {
+        document.getElementById('totalCustomers').textContent = customers.length;
+        document.getElementById('activeCustomers').textContent = customers.filter(c => c.status === 'active').length;
+        document.getElementById('inactiveCustomers').textContent = customers.filter(c => c.status !== 'active').length;
+    }
+    
+    if (typeof sales !== 'undefined') {
+        const totalSales = sales.reduce((sum, sale) => sum + parseFloat(sale.amount || 0), 0);
+        document.getElementById('totalSales').textContent = totalSales.toFixed(2) + ' دينار';
+    }
+    
+    console.log('✅ تم تحديث الإحصائيات مباشرة');
+}
 </script>
     </script>
 </body>
 </html>
+
 
 
