@@ -263,7 +263,12 @@
                 <h2 class="page-title-black">👤 حسابي</h2>
                 
                 <!-- قسم حالة الحساب -->
-                
+                <div class="settings-section">
+                    <h3>📊 حالة الحساب والمستوى</h3>
+                    <div id="accountStatus">
+                        <!-- سيتم عرض حالة الحساب هنا -->
+                    </div>
+                </div>
 
                 <div class="settings-section">
                     <h3>🔄 تحديث المعلومات الشخصية</h3>
@@ -279,7 +284,22 @@
                     <button class="btn btn-primary" onclick="updateProfile()">💾 حفظ التغييرات</button>
                 </div>
 
-                
+                <div class="settings-section">
+                    <h3>🔐 تغيير كلمة المرور</h3>
+                    <div class="form-group">
+                        <label>كلمة المرور الحالية</label>
+                        <input type="password" id="currentPassword" placeholder="أدخل كلمة المرور الحالية">
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور الجديدة</label>
+                        <input type="password" id="newPassword" placeholder="أدخل كلمة المرور الجديدة">
+                    </div>
+                    <div class="form-group">
+                        <label>تأكيد كلمة المرور الجديدة</label>
+                        <input type="password" id="confirmPassword" placeholder="أعد إدخال كلمة المرور الجديدة">
+                    </div>
+                    <button class="btn btn-warning" onclick="changePassword()">🔄 تغيير كلمة المرور</button>
+                </div>
 
                 <!-- قسم معلومات الموقع -->
                 <div class="settings-section">
@@ -320,8 +340,21 @@
                 </div>
 
                 <!-- قسم إدارة الحساب -->
-            
-    
+             
+
+                <!-- قسم النشاط الأخير -->
+                <div class="settings-section">
+                    <h3>📈 النشاط الأخير</h3>
+                    <div id="recentActivity" style="background: #f8f9fa; padding: 20px; border-radius: 8px; min-height: 100px;">
+                        <div style="text-align: center; color: #6c757d;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">📊</div>
+                            <p>جاري تحميل النشاط الأخير...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- نافذة تصدير البيانات -->
     <div id="exportModal" class="modal">
