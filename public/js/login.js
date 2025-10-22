@@ -1,615 +1,820 @@
-// profile.js - نظام الملف الشخصي المدمج مع بيانات التسجيل
+// login.js - معدل مع تأثيرات سحرية
+const API_BASE_URL = "https://datavision-nilx.onrender.com";
+console.log('🔗 API Base URL:', API_BASE_URL);
 
-class ProfileManager {
-    constructor() {
-        this.userData = this.loadUserData();
-        this.initProfile();
-    }
-
-    // تحميل بيانات المستخدم من نظام التسجيل
-    loadUserData() {
-        // أولوية لبيانات المستخدم من نظام التسجيل
-        const savedUser = localStorage.getItem('datavision_user');
-        const savedProfile = localStorage.getItem('userProfile');
-        
-        if (savedUser) {
-            const userData = JSON.parse(savedUser);
-            console.log('👤 تحميل بيانات المستخدم من نظام التسجيل:', userData);
-            
-            // دمج البيانات مع الملف الشخصي
-            const profileData = savedProfile ? JSON.parse(savedProfile) : {};
-            
-            return {
-                ...profileData,
-                name: userData.name || profileData.name || '',
-                email: userData.email || profileData.email || '',
-                joinDate: userData.createdAt || profileData.joinDate || new Date().toLocaleDateString('ar-EG'),
-                lastActivity: new Date().toLocaleString('ar-EG'),
-                location: profileData.location || {
-                    country: '',
-                    city: '',
-                    region: '',
-                    latitude: '',
-                    longitude: '',
-                    timezone: ''
-                },
-                stats: profileData.stats || {
-                    addedCustomers: 0,
-                    totalSales: 0
-                },
-                // بيانات إضافية من نظام التسجيل
-                userId: userData.id || userData._id,
-                isVerified: userData.isVerified || false,
-                lastLogin: userData.lastLogin || new Date().toISOString(),
-                subscription: userData.subscription || 'basic'
-            };
-        } else if (savedProfile) {
-            console.log('👤 تحميل بيانات من الملف الشخصي المحلي');
-            return JSON.parse(savedProfile);
-        } else {
-            console.log('👤 إنشاء بيانات مستخدم جديدة');
-            return {
-                name: '',
-                email: '',
-                joinDate: new Date().toLocaleDateString('ar-EG'),
-                lastActivity: new Date().toLocaleString('ar-EG'),
-                location: {
-                    country: '',
-                    city: '',
-                    region: '',
-                    latitude: '',
-                    longitude: '',
-                    timezone: ''
-                },
-                stats: {
-                    addedCustomers: 0,
-                    totalSales: 0
-                },
-                subscription: 'basic',
-                isVerified: false
-            };
-        }
-    }
-
-    // حفظ بيانات المستخدم
-    saveUserData() {
-        localStorage.setItem('userProfile', JSON.stringify(this.userData));
-        
-        // أيضاً تحديث بيانات المستخدم في نظام التسجيل
-        const currentUser = localStorage.getItem('datavision_user');
-        if (currentUser) {
-            const userData = JSON.parse(currentUser);
-            const updatedUser = {
-                ...userData,
-                name: this.userData.name,
-                email: this.userData.email,
-                lastActivity: this.userData.lastActivity
-            };
-            localStorage.setItem('datavision_user', JSON.stringify(updatedUser));
-        }
-    }
-
-    // تهيئة الصفحة
-    initProfile() {
-        this.displayUserInfo();
-        this.updateStats();
-        this.getUserLocation();
-        this.setupEventListeners();
-        this.setupAuthListeners();
-    }
-
-    // عرض معلومات المستخدم
-    displayUserInfo() {
-        document.getElementById('userName').value = this.userData.name || '';
-        document.getElementById('userEmail').value = this.userData.email || '';
-        document.getElementById('joinDate').textContent = this.formatDate(this.userData.joinDate);
-        document.getElementById('lastActivity').textContent = this.userData.lastActivity;
-        
-        // عرض حالة الحساب
-        this.displayAccountStatus();
-        
-        // عرض معلومات الموقع إذا كانت متوفرة
-        this.displayLocationInfo();
-    }
-
-    // عرض حالة الحساب
-    displayAccountStatus() {
-        const accountStatus = document.getElementById('accountStatus');
-        if (!accountStatus) return;
-
-        const statusHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
-                <div class="status-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px;">
-                    <strong>📧 حالة البريد الإلكتروني</strong>
-                    <div style="margin-top: 10px; font-size: 18px;">
-                        ${this.userData.isVerified ? '✅ مفعل' : '❌ غير مفعل'}
-                    </div>
-                    ${!this.userData.isVerified ? `
-                    <button onclick="profileManager.verifyEmail()" class="btn btn-sm btn-light" style="margin-top: 10px; font-size: 12px;">
-                        تفعيل البريد
-                    </button>
-                    ` : ''}
-                </div>
-                
-                <div class="status-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 12px;">
-                    <strong>💼 نوع الاشتراك</strong>
-                    <div style="margin-top: 10px; font-size: 18px; text-transform: capitalize;">
-                        ${this.userData.subscription || 'basic'}
-                    </div>
-                    <button onclick="profileManager.upgradeSubscription()" class="btn btn-sm btn-light" style="margin-top: 10px; font-size: 12px;">
-                        ترقية الاشتراك
-                    </button>
-                </div>
-                
-                <div class="status-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 12px;">
-                    <strong>🆔 معرف المستخدم</strong>
-                    <div style="margin-top: 10px; font-size: 14px; font-family: monospace;">
-                        ${this.userData.userId || 'غير متوفر'}
-                    </div>
-                </div>
-                
-                <div class="status-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 20px; border-radius: 12px;">
-                    <strong>📊 مستوى النشاط</strong>
-                    <div style="margin-top: 10px; font-size: 18px;">
-                        ${this.getActivityLevel()}
-                    </div>
-                </div>
-            </div>
+// تأثيرات سحرية - إنشاء جسيمات متحركة
+function createMagicParticles(x, y, color = '#5B2EDE') {
+    const container = document.querySelector('.login-container') || document.body;
+    const particlesContainer = document.createElement('div');
+    particlesContainer.className = 'magic-particles';
+    particlesContainer.style.cssText = `
+        position: absolute;
+        top: ${y}px;
+        left: ${x}px;
+        pointer-events: none;
+        z-index: 100;
+    `;
+    
+    for (let i = 0; i < 12; i++) {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: ${color};
+            border-radius: 50%;
+            pointer-events: none;
+            animation: magicFloat 1.2s ease-out forwards;
         `;
         
-        accountStatus.innerHTML = statusHTML;
-    }
-
-    // الحصول على مستوى النشاط
-    getActivityLevel() {
-        const customersCount = this.userData.stats.addedCustomers || 0;
-        const salesTotal = this.userData.stats.totalSales || 0;
+        const angle = (i / 12) * Math.PI * 2;
+        const distance = 30 + Math.random() * 40;
+        particle.style.setProperty('--angle', angle);
+        particle.style.setProperty('--distance', distance);
         
-        if (salesTotal > 1000 || customersCount > 50) return '🏆 نشط جداً';
-        if (salesTotal > 500 || customersCount > 20) return '🚀 نشط';
-        if (salesTotal > 100 || customersCount > 10) return '💪 متوسط';
-        return '🔰 مبتدئ';
+        particlesContainer.appendChild(particle);
     }
+    
+    container.appendChild(particlesContainer);
+    
+    setTimeout(() => {
+        particlesContainer.remove();
+    }, 1200);
+}
 
-    // عرض معلومات الموقع
-    displayLocationInfo() {
-        const locationInfo = document.getElementById('locationInfo');
-        if (!locationInfo) return;
-
-        if (this.userData.location.country) {
-            locationInfo.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-                    <div class="location-card" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-right: 4px solid #007bff;">
-                        <strong>🌍 الدولة:</strong>
-                        <div>${this.userData.location.country}</div>
-                    </div>
-                    <div class="location-card" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-right: 4px solid #28a745;">
-                        <strong>🏙️ المدينة:</strong>
-                        <div>${this.userData.location.city}</div>
-                    </div>
-                    <div class="location-card" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-right: 4px solid #ffc107;">
-                        <strong>📍 المنطقة:</strong>
-                        <div>${this.userData.location.region}</div>
-                    </div>
-                    <div class="location-card" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-right: 4px solid #dc3545;">
-                        <strong>⏰ المنطقة الزمنية:</strong>
-                        <div>${this.userData.location.timezone}</div>
-                    </div>
-                </div>
-                ${this.userData.location.latitude ? `
-                <div style="margin-top: 15px; padding: 15px; background: #e7f3ff; border-radius: 8px; border: 1px solid #b3d9ff;">
-                    <strong>🧭 الإحداثيات:</strong>
-                    <div>خط العرض: ${this.userData.location.latitude} | خط الطول: ${this.userData.location.longitude}</div>
-                </div>
-                ` : ''}
-            `;
-        } else {
-            locationInfo.innerHTML = `
-                <div style="text-align: center; padding: 20px; color: #6c757d;">
-                    <div style="font-size: 48px; margin-bottom: 10px;">🌍</div>
-                    <p>جاري الحصول على معلومات الموقع...</p>
-                    <button onclick="profileManager.getUserLocation()" class="btn btn-primary" style="margin-top: 10px;">
-                        🔄 تحديث الموقع
-                    </button>
-                </div>
-            `;
+// تأثير كتابة سحري للنص
+function typeWriterEffect(element, text, speed = 50) {
+    element.textContent = '';
+    let i = 0;
+    
+    function type() {
+        if (i < text.length) {
+            element.textContent += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
         }
     }
+    
+    type();
+}
 
-    // الحصول على موقع المستخدم
-    async getUserLocation() {
-        const locationInfo = document.getElementById('locationInfo');
+// تأثير اهتزاز للحقول عند الخطأ
+function shakeElement(element) {
+    element.style.animation = 'shake 0.5s ease-in-out';
+    setTimeout(() => {
+        element.style.animation = '';
+    }, 500);
+}
+
+// تأثير توهج للحقول عند النجاح
+function glowElement(element, color = '#5B2EDE') {
+    element.style.boxShadow = `0 0 20px ${color}, 0 0 40px ${color}`;
+    element.style.transform = 'scale(1.02)';
+    
+    setTimeout(() => {
+        element.style.boxShadow = '';
+        element.style.transform = '';
+    }, 1000);
+}
+
+// تأثير تحول سحري بين النماذج
+function magicalFormTransition(currentForm, nextForm) {
+    currentForm.style.animation = 'magicFadeOut 0.6s ease forwards';
+    
+    setTimeout(() => {
+        currentForm.style.display = 'none';
+        nextForm.style.display = 'block';
+        nextForm.style.animation = 'magicFadeIn 0.6s ease forwards';
         
-        if (!navigator.geolocation) {
-            this.showNotification('❌ المتصفح لا يدعم خدمة الموقع', 'error');
-            return;
-        }
+        // تأثير جسيمات عند التحويل
+        const rect = nextForm.getBoundingClientRect();
+        createMagicParticles(rect.left + rect.width/2, rect.top + rect.height/2, '#A277FF');
+    }, 300);
+}
 
-        try {
-            // عرض رسالة تحميل
-            if (locationInfo) {
-                locationInfo.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: #6c757d;">
-                        <div style="font-size: 48px; margin-bottom: 10px;">⏳</div>
-                        <p>جاري تحديد موقعك...</p>
-                        <div style="font-size: 12px; margin-top: 10px;">يرجى السماح بالوصول إلى الموقع</div>
-                    </div>
-                `;
+// تأثير تحميل سحري
+function showMagicLoading(button) {
+    const originalText = button.textContent;
+    button.innerHTML = `
+        <div class="magic-spinner"></div>
+        <span>جاري المعالجة...</span>
+    `;
+    button.disabled = true;
+    
+    return () => {
+        button.textContent = originalText;
+        button.disabled = false;
+    };
+}
+
+// تأثير نجمة متابعة الماوس
+function createMouseFollower() {
+    const follower = document.createElement('div');
+    follower.className = 'magic-mouse-follower';
+    follower.style.cssText = `
+        position: fixed;
+        width: 8px;
+        height: 8px;
+        background: linear-gradient(45deg, #5B2EDE, #A277FF);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        transition: transform 0.1s ease;
+        mix-blend-mode: difference;
+    `;
+    
+    document.body.appendChild(follower);
+    
+    document.addEventListener('mousemove', (e) => {
+        follower.style.left = e.clientX - 4 + 'px';
+        follower.style.top = e.clientY - 4 + 'px';
+    });
+    
+    document.addEventListener('click', (e) => {
+        // تأثير رipple عند النقر
+        createRippleEffect(e.clientX, e.clientY);
+    });
+}
+
+// تأثير تموجات عند النقر
+function createRippleEffect(x, y) {
+    const ripple = document.createElement('div');
+    ripple.style.cssText = `
+        position: fixed;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #A277FF;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9998;
+        left: ${x - 10}px;
+        top: ${y - 10}px;
+        animation: rippleExpand 0.8s ease-out forwards;
+    `;
+    
+    document.body.appendChild(ripple);
+    
+    setTimeout(() => {
+        ripple.remove();
+    }, 800);
+}
+
+// تأثير طباعة نصوص الوصف
+function animateDescriptions() {
+    const descriptions = document.querySelectorAll('.magic-description');
+    descriptions.forEach((desc, index) => {
+        setTimeout(() => {
+            typeWriterEffect(desc, desc.getAttribute('data-text') || desc.textContent);
+        }, index * 800);
+    });
+}
+
+// تأثير خلفية ديناميكية
+function createDynamicBackground() {
+    const bg = document.querySelector('.background-effects') || document.createElement('div');
+    bg.className = 'background-effects';
+    bg.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        overflow: hidden;
+    `;
+    
+    // إضافة عناصر ديناميكية للخلفية
+    for (let i = 0; i < 15; i++) {
+        const shape = document.createElement('div');
+        shape.className = 'dynamic-shape';
+        shape.style.cssText = `
+            position: absolute;
+            width: ${40 + Math.random() * 80}px;
+            height: ${40 + Math.random() * 80}px;
+            background: linear-gradient(45deg, 
+                rgba(91, 46, 222, ${0.1 + Math.random() * 0.1}), 
+                rgba(162, 119, 255, ${0.1 + Math.random() * 0.1})
+            );
+            border-radius: ${Math.random() > 0.5 ? '50%' : '20%'};
+            filter: blur(${10 + Math.random() * 20}px);
+            animation: floatBackground ${15 + Math.random() * 20}s infinite ease-in-out;
+            top: ${Math.random() * 100}%;
+            left: ${Math.random() * 100}%;
+            animation-delay: -${Math.random() * 20}s;
+        `;
+        
+        bg.appendChild(shape);
+    }
+    
+    if (!document.querySelector('.background-effects')) {
+        document.body.appendChild(bg);
+    }
+}
+
+// تأثيرات CSS المخصصة
+function addMagicStyles() {
+    const styles = `
+        @keyframes magicFloat {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
             }
-
-            // الحصول على الإحداثيات
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 60000
-                });
-            });
-
-            const { latitude, longitude } = position.coords;
-            
-            // الحصول على معلومات الموقع من API
-            const locationData = await this.reverseGeocode(latitude, longitude);
-            
-            // تحديث بيانات المستخدم
-            this.userData.location = {
-                country: locationData.country || 'غير معروف',
-                city: locationData.city || locationData.town || locationData.village || 'غير معروف',
-                region: locationData.state || locationData.region || 'غير معروف',
-                latitude: latitude.toFixed(6),
-                longitude: longitude.toFixed(6),
-                timezone: this.getTimezone()
-            };
-
-            this.userData.lastActivity = new Date().toLocaleString('ar-EG');
-            this.saveUserData();
-            this.displayLocationInfo();
-            
-            this.showNotification('✅ تم تحديث معلومات الموقع بنجاح', 'success');
-            
-        } catch (error) {
-            console.error('Error getting location:', error);
-            this.handleLocationError(error);
-        }
-    }
-
-    // reverse geocoding للحصول على اسم الموقع
-    async reverseGeocode(lat, lng) {
-        try {
-            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`);
-            const data = await response.json();
-            
-            return {
-                country: data.countryName,
-                city: data.city,
-                locality: data.locality,
-                region: data.principalSubdivision
-            };
-        } catch (error) {
-            console.error('Reverse geocoding error:', error);
-            // استخدام خدمة بديلة
-            return await this.alternativeGeocode(lat, lng);
-        }
-    }
-
-    // خدمة بديلة لل reverse geocoding
-    async alternativeGeocode(lat, lng) {
-        try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`);
-            const data = await response.json();
-            
-            return {
-                country: data.address.country,
-                city: data.address.city || data.address.town || data.address.village,
-                state: data.address.state,
-                region: data.address.region
-            };
-        } catch (error) {
-            console.error('Alternative geocoding error:', error);
-            return {
-                country: 'غير معروف',
-                city: 'غير معروف',
-                region: 'غير معروف'
-            };
-        }
-    }
-
-    // الحصول على المنطقة الزمنية
-    getTimezone() {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone;
-    }
-
-    // تحديث الإحصائيات
-    updateStats() {
-        const customers = JSON.parse(localStorage.getItem('customers') || '[]');
-        const sales = JSON.parse(localStorage.getItem('sales') || '[]');
-        
-        this.userData.stats.addedCustomers = customers.length;
-        this.userData.stats.totalSales = sales.reduce((total, sale) => total + parseFloat(sale.amount || 0), 0);
-        
-        document.getElementById('addedCustomers').textContent = this.userData.stats.addedCustomers;
-        document.getElementById('userTotalSales').textContent = this.userData.stats.totalSales.toFixed(2) + ' دينار';
-        
-        this.saveUserData();
-    }
-
-    // تحديث الملف الشخصي
-    updateProfile() {
-        const name = document.getElementById('userName').value.trim();
-        const email = document.getElementById('userEmail').value.trim();
-
-        if (!name) {
-            this.showNotification('❌ يرجى إدخال الاسم الكامل', 'error');
-            return;
-        }
-
-        if (email && !this.isValidEmail(email)) {
-            this.showNotification('❌ يرجى إدخال بريد إلكتروني صحيح', 'error');
-            return;
-        }
-
-        this.userData.name = name;
-        this.userData.email = email;
-        this.userData.lastActivity = new Date().toLocaleString('ar-EG');
-        
-        this.saveUserData();
-        this.showNotification('✅ تم تحديث الملف الشخصي بنجاح', 'success');
-        
-        // تحديث الإحصائيات
-        this.updateStats();
-    }
-
-    // تغيير كلمة المرور
-    async changePassword() {
-        const currentPassword = document.getElementById('currentPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            this.showNotification('❌ يرجى ملء جميع الحقول', 'error');
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            this.showNotification('❌ كلمة المرور الجديدة غير متطابقة', 'error');
-            return;
-        }
-
-        if (newPassword.length < 6) {
-            this.showNotification('❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
-            return;
-        }
-
-        try {
-            // هنا يمكنك إضافة API call لتغيير كلمة المرور
-            const token = localStorage.getItem('datavision_token');
-            if (!token) {
-                throw new Error('يجب تسجيل الدخول أولاً');
+            100% {
+                opacity: 0;
+                transform: 
+                    translate(
+                        calc(cos(var(--angle)) * var(--distance) * 1px),
+                        calc(sin(var(--angle)) * var(--distance) * 1px)
+                    ) scale(0);
             }
-
-            // محاكاة تغيير كلمة المرور (استبدل هذا بـ API حقيقي)
-            await this.changePasswordAPI(currentPassword, newPassword);
-            
-            this.showNotification('✅ تم تغيير كلمة المرور بنجاح', 'success');
-            
-            // مسح الحقول
-            document.getElementById('currentPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-            
-        } catch (error) {
-            this.showNotification('❌ ' + error.message, 'error');
         }
-    }
+        
+        @keyframes magicFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(30px) scale(0.9);
+                filter: blur(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+        
+        @keyframes magicFadeOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+                filter: blur(10px);
+            }
+        }
+        
+        @keyframes rippleExpand {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(8);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes floatBackground {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            33% {
+                transform: translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px) rotate(120deg);
+            }
+            66% {
+                transform: translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px) rotate(240deg);
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .magic-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .magic-input-focus {
+            animation: inputGlow 2s infinite alternate;
+        }
+        
+        @keyframes inputGlow {
+            0% {
+                box-shadow: 0 0 10px rgba(91, 46, 222, 0.3);
+            }
+            100% {
+                box-shadow: 0 0 20px rgba(91, 46, 222, 0.6), 0 0 30px rgba(162, 119, 255, 0.4);
+            }
+        }
+        
+        .success-pulse {
+            animation: successPulse 0.6s ease;
+        }
+        
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .password-strength-animation {
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+    `;
+    
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+}
 
-    // محاكاة تغيير كلمة المرور (استبدل بـ API حقيقي)
-    async changePasswordAPI(currentPassword, newPassword) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                // محاكاة نجاح العملية
-                resolve({ success: true });
-                // في حالة الفشل: reject(new Error('كلمة المرور الحالية غير صحيحة'));
-            }, 1000);
+// تهيئة جميع التأثيرات السحرية
+function initializeMagicEffects() {
+    addMagicStyles();
+    createDynamicBackground();
+    createMouseFollower();
+    animateDescriptions();
+    
+    // إضافة تأثيرات للحقول عند التركيز
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.classList.add('magic-input-focus');
+            createMagicParticles(
+                this.getBoundingClientRect().left,
+                this.getBoundingClientRect().bottom,
+                '#5B2EDE'
+            );
         });
-    }
+        
+        input.addEventListener('blur', function() {
+            this.classList.remove('magic-input-focus');
+        });
+    });
+    
+    // تأثيرات للأزرار
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            createMagicParticles(
+                this.getBoundingClientRect().left,
+                this.getBoundingClientRect().top,
+                '#A277FF'
+            );
+        });
+        
+        button.addEventListener('click', function(e) {
+            createMagicParticles(e.clientX, e.clientY, '#00D4AA');
+        });
+    });
+}
 
-    // تفعيل البريد الإلكتروني
-    async verifyEmail() {
-        try {
-            this.showNotification('📧 جاري إرسال رابط التفعيل...', 'success');
+// منع الدخول المزدوج - إذا كان مسجل دخول بالفعل
+function preventDoubleLogin() {
+    const token = localStorage.getItem('datavision_token');
+    const user = localStorage.getItem('datavision_user');
+    
+    if (token && user) {
+        console.log('✅ المستخدم مسجل دخول بالفعل، التوجيه للصفحة الرئيسية');
+        
+        // تأثير انتقال سحري قبل التوجيه
+        document.body.style.animation = 'magicFadeOut 0.8s ease forwards';
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 800);
+    }
+}
+
+// دوال API للاتصال بالسيرفر - مع تأثيرات سحرية
+async function login(email, password) {
+    try {
+        console.log('🔐 محاولة تسجيل دخول:', { email });
+        
+        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        console.log('📡 استجابة تسجيل الدخول:', response.status);
+        
+        const data = await response.json();
+        console.log('📊 بيانات الاستجابة:', data);
+        
+        if (data.success) {
+            // تأثير نجاح سحري
+            document.querySelector('.login-container')?.classList.add('success-pulse');
+            createMagicParticles(window.innerWidth/2, window.innerHeight/2, '#00D4AA');
             
-            // محاكاة إرسال رابط التفعيل
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            this.showNotification('✅ تم إرسال رابط التفعيل إلى بريدك الإلكتروني', 'success');
-            
-        } catch (error) {
-            this.showNotification('❌ فشل في إرسال رابط التفعيل', 'error');
+            // حفظ التوكن والمستخدم بنفس المفاتيح التي يستخدمها api-client.js
+            localStorage.setItem('datavision_token', data.token);
+            localStorage.setItem('datavision_user', JSON.stringify(data.user));
+            return data;
+        } else {
+            throw new Error(data.error || 'فشل تسجيل الدخول');
         }
+    } catch (error) {
+        console.error('❌ خطأ في تسجيل الدخول:', error);
+        throw error;
     }
+}
 
-    // ترقية الاشتراك
-    async upgradeSubscription() {
-        try {
-            this.showNotification('🔄 جاري تحويلك لصفحة الترقي...', 'success');
+async function register(name, email, password) {
+    try {
+        console.log('📝 محاولة إنشاء حساب:', { name, email });
+        
+        const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, email, password })
+        });
+
+        console.log('📡 استجابة إنشاء الحساب:', response.status);
+        
+        const data = await response.json();
+        console.log('📊 بيانات الاستجابة:', data);
+        
+        if (data.success) {
+            // تأثير نجاح سحري
+            document.querySelector('.login-container')?.classList.add('success-pulse');
+            createMagicParticles(window.innerWidth/2, window.innerHeight/2, '#00D4AA');
             
-            // محاكاة الانتقال لصفحة الدفع
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            this.showNotification('💎 اختر خطة الاشتراك المناسبة لك', 'success');
-            
-        } catch (error) {
-            this.showNotification('❌ فشل في عملية الترقية', 'error');
+            // حفظ التوكن والمستخدم بنفس المفاتيح التي يستخدمها api-client.js
+            localStorage.setItem('datavision_token', data.token);
+            localStorage.setItem('datavision_user', JSON.stringify(data.user));
+            return data;
+        } else {
+            throw new Error(data.error || 'فشل إنشاء الحساب');
         }
+    } catch (error) {
+        console.error('❌ خطأ في إنشاء الحساب:', error);
+        throw error;
     }
+}
 
-    // تسجيل الخروج
-    logout() {
-        // تأثيرات قبل تسجيل الخروج
-        this.showNotification('👋 جاري تسجيل الخروج...', 'success');
+// دوال المساعدة - معدلة مع تأثيرات سحرية
+function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    if (!notification) {
+        const newNotification = document.createElement('div');
+        newNotification.id = 'notification';
+        newNotification.className = `notification ${type} magic-notification`;
+        newNotification.textContent = message;
+        newNotification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 20px 25px;
+            border-radius: 15px;
+            color: white;
+            z-index: 10000;
+            display: block;
+            max-width: 400px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transform: translateX(100px);
+            opacity: 0;
+            animation: magicSlideIn 0.5s ease forwards;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        `;
+        
+        if (type === 'success') {
+            newNotification.style.background = 'linear-gradient(135deg, #00D4AA, #00B894)';
+        }
+        if (type === 'error') {
+            newNotification.style.background = 'linear-gradient(135deg, #FF476F, #E63946)';
+        }
+        
+        document.body.appendChild(newNotification);
+        
+        // تأثير جسيمات للإشعار
+        createMagicParticles(
+            newNotification.getBoundingClientRect().left + 50,
+            newNotification.getBoundingClientRect().top + 25,
+            type === 'success' ? '#00D4AA' : '#FF476F'
+        );
         
         setTimeout(() => {
-            // مسح بيانات التسجيل
-            localStorage.removeItem('datavision_token');
-            localStorage.removeItem('datavision_user');
-            
-            // الاحتفاظ ببيانات الملف الشخصي (اختياري)
-            // localStorage.removeItem('userProfile');
-            
-            // التوجيه لصفحة التسجيل
-            window.location.href = 'login.html';
-        }, 1500);
-    }
-
-    // إعداد مستمعي الأحداث
-    setupEventListeners() {
-        // تحديث الإحصائيات عند تبديل التبويبات
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                this.updateStats();
-            }
-        });
-
-        // تحديث آخر نشاط عند التفاعل مع الصفحة
-        document.addEventListener('click', () => {
-            this.userData.lastActivity = new Date().toLocaleString('ar-EG');
-            this.saveUserData();
-        });
-    }
-
-    // إعداد مستمعي المصادقة
-    setupAuthListeners() {
-        // الاستماع لتغييرات حالة المصادقة
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'datavision_user' || e.key === 'datavision_token') {
-                console.log('🔄 تحديث بيانات المستخدم بسبب تغيير في المصادقة');
-                this.userData = this.loadUserData();
-                this.displayUserInfo();
-                this.updateStats();
-            }
-        });
-
-        // التحقق من صحة التوكن بانتظام
-        setInterval(() => {
-            this.checkAuthValidity();
-        }, 300000); // كل 5 دقائق
-    }
-
-    // التحقق من صحة المصادقة
-    checkAuthValidity() {
-        const token = localStorage.getItem('datavision_token');
-        if (!token) {
-            this.showNotification('❌ انتهت جلسة العمل، يرجى تسجيل الدخول مرة أخرى', 'error');
+            newNotification.style.animation = 'magicSlideOut 0.5s ease forwards';
             setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 2000);
-            return;
-        }
-    }
-
-    // التحقق من صحة البريد الإلكتروني
-    isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
-    // تنسيق التاريخ
-    formatDate(dateString) {
-        if (!dateString) return '-';
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('ar-EG', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        } catch (error) {
-            return dateString;
-        }
-    }
-
-    // عرض الإشعارات
-    showNotification(message, type = 'info') {
-        const notification = document.getElementById('notification');
-        if (notification) {
-            notification.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 5000);
-        } else {
-            // إنشاء إشعار مؤقت إذا لم يكن موجوداً
-            const tempNotification = document.createElement('div');
-            tempNotification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
-                color: white;
-                border-radius: 8px;
-                z-index: 10000;
-                font-weight: bold;
-            `;
-            tempNotification.textContent = message;
-            document.body.appendChild(tempNotification);
-            
-            setTimeout(() => {
-                document.body.removeChild(tempNotification);
-            }, 5000);
-        }
-    }
-
-    // تصدير بيانات الملف الشخصي
-    exportProfileData() {
-        const dataStr = JSON.stringify(this.userData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(dataBlob);
-        link.download = `profile_data_${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-        
-        this.showNotification('✅ تم تصدير بيانات الملف الشخصي', 'success');
+                newNotification.remove();
+            }, 500);
+        }, 4000);
+        return;
     }
 }
 
-// تهيئة مدير الملف الشخصي عند تحميل الصفحة
-let profileManager;
+// إظهار/إخفاء كلمة المرور - مع تأثيرات
+function togglePasswordVisibility(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    createMagicParticles(
+        button.getBoundingClientRect().left + button.offsetWidth/2,
+        button.getBoundingClientRect().top + button.offsetHeight/2,
+        '#5B2EDE'
+    );
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.innerHTML = '🙈';
+        glowElement(input, '#00D4AA');
+    } else {
+        input.type = 'password';
+        button.innerHTML = '👁️';
+        glowElement(input, '#5B2EDE');
+    }
+}
 
+// التحقق من قوة كلمة المرور - مع تأثيرات محسنة
+function checkPasswordStrength(password) {
+    const strengthFill = document.getElementById('strengthFill');
+    const strengthText = document.getElementById('strengthText');
+    const strengthLevel = document.getElementById('strengthLevel');
+    
+    if (!strengthFill || !strengthText) return;
+    
+    let strength = 0;
+    const hints = {
+        length: password.length >= 8,
+        number: /\d/.test(password),
+        upper: /[A-Z]/.test(password),
+        lower: /[a-z]/.test(password),
+        special: /[^a-zA-Z\d]/.test(password)
+    };
+
+    // تحديث التلميحات
+    updateHints(hints);
+
+    // حساب القوة
+    if (hints.length) strength++;
+    if (hints.number) strength++;
+    if (hints.upper) strength++;
+    if (hints.lower) strength++;
+    if (hints.special) strength++;
+
+    // تأثيرات بصرية حسب القوة
+    strengthFill.classList.add('password-strength-animation');
+    
+    if (password.length === 0) {
+        strengthFill.style.width = '0%';
+        strengthText.textContent = 'لم يتم إدخال كلمة مرور';
+        if (strengthLevel) strengthLevel.style.display = 'none';
+    } else {
+        const strengthData = [
+            { width: '20%', class: 'very-weak', text: 'ضعيف جداً', color: '#FF476F' },
+            { width: '40%', class: 'weak', text: 'ضعيف', color: '#FF8A4C' },
+            { width: '60%', class: 'fair', text: 'متوسط', color: '#FFB800' },
+            { width: '80%', class: 'strong', text: 'قوي', color: '#00D4AA' },
+            { width: '100%', class: 'very-strong', text: 'قوي جداً', color: '#00B894' }
+        ];
+        
+        const level = Math.max(0, Math.min(4, strength - 1));
+        const data = strengthData[level];
+        
+        strengthFill.style.width = data.width;
+        strengthFill.className = `strength-fill ${data.class} password-strength-animation`;
+        strengthText.textContent = data.text;
+        
+        if (strengthLevel) {
+            strengthLevel.textContent = data.text;
+            strengthLevel.className = `strength-level ${data.class}`;
+            strengthLevel.style.display = 'inline-block';
+        }
+        
+        // تأثير جسيمات عند تحسن قوة كلمة المرور
+        if (strength >= 3) {
+            createMagicParticles(
+                strengthFill.getBoundingClientRect().left + strengthFill.offsetWidth,
+                strengthFill.getBoundingClientRect().top + strengthFill.offsetHeight/2,
+                data.color
+            );
+        }
+    }
+}
+
+// التبديل بين النماذج - مع تأثيرات سحرية
+function showSignupForm() {
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    if (loginForm && signupForm) {
+        magicalFormTransition(loginForm, signupForm);
+    }
+}
+
+function showLoginForm() {
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    if (signupForm && loginForm) {
+        magicalFormTransition(signupForm, loginForm);
+    }
+}
+
+// معالجة تسجيل الدخول - مع تأثيرات سحرية
+async function handleLogin(event) {
+    event.preventDefault();
+    console.log('🟡 بدء تسجيل الدخول...');
+    
+    const email = document.getElementById('loginEmail')?.value;
+    const password = document.getElementById('loginPassword')?.value;
+    const button = event.target.querySelector('.btn-primary') || event.target;
+    
+    if (!email || !password) {
+        showNotification('يرجى ملء جميع الحقول', 'error');
+        const inputs = document.querySelectorAll('#loginForm input');
+        inputs.forEach(input => {
+            if (!input.value) shakeElement(input);
+        });
+        return;
+    }
+
+    try {
+        const resetLoading = showMagicLoading(button);
+        showNotification('جاري تسجيل الدخول...', 'success');
+        
+        const result = await login(email, password);
+        
+        if (result.success) {
+            showNotification('تم تسجيل الدخول بنجاح!', 'success');
+            
+            setTimeout(() => {
+                document.body.style.animation = 'magicFadeOut 0.8s ease forwards';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 800);
+            }, 1500);
+        }
+    } catch (error) {
+        console.error('🔴 خطأ في تسجيل الدخول:', error);
+        showNotification('خطأ في تسجيل الدخول: ' + error.message, 'error');
+        shakeElement(document.querySelector('.login-container'));
+    } finally {
+        if (event.target.querySelector('.btn-primary')) {
+            const resetLoading = showMagicLoading(event.target.querySelector('.btn-primary'));
+            setTimeout(resetLoading, 1000);
+        }
+    }
+}
+
+// معالجة إنشاء الحساب - مع تأثيرات سحرية
+async function handleSignup(event) {
+    event.preventDefault();
+    console.log('🟡 بدء إنشاء حساب...');
+    
+    const name = document.getElementById('signupName')?.value;
+    const email = document.getElementById('signupEmail')?.value;
+    const password = document.getElementById('signupPassword')?.value;
+    const confirmPassword = document.getElementById('confirmPassword')?.value;
+    const agreeTerms = document.getElementById('agreeTerms')?.checked;
+    const button = event.target.querySelector('.btn-primary') || event.target;
+    
+    // التحقق من صحة البيانات
+    if (!name || !email || !password || !confirmPassword) {
+        showNotification('يرجى ملء جميع الحقول', 'error');
+        const inputs = document.querySelectorAll('#signupForm input');
+        inputs.forEach(input => {
+            if (!input.value && input.type !== 'checkbox') shakeElement(input);
+        });
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        showNotification('كلمتا المرور غير متطابقتين', 'error');
+        shakeElement(document.getElementById('confirmPassword'));
+        return;
+    }
+    
+    if (!agreeTerms) {
+        showNotification('يجب الموافقة على الشروط والأحكام', 'error');
+        shakeElement(document.getElementById('agreeTerms').parentElement);
+        return;
+    }
+    
+    if (password.length < 6) {
+        showNotification('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+        shakeElement(document.getElementById('signupPassword'));
+        return;
+    }
+
+    try {
+        const resetLoading = showMagicLoading(button);
+        showNotification('جاري إنشاء الحساب...', 'success');
+        
+        const result = await register(name, email, password);
+        
+        if (result.success) {
+            showNotification('تم إنشاء الحساب بنجاح!', 'success');
+            
+            setTimeout(() => {
+                document.body.style.animation = 'magicFadeOut 0.8s ease forwards';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 800);
+            }, 1500);
+        }
+    } catch (error) {
+        console.error('🔴 خطأ في إنشاء الحساب:', error);
+        showNotification('خطأ في إنشاء الحساب: ' + error.message, 'error');
+        shakeElement(document.querySelector('.login-container'));
+    } finally {
+        if (event.target.querySelector('.btn-primary')) {
+            const resetLoading = showMagicLoading(event.target.querySelector('.btn-primary'));
+            setTimeout(resetLoading, 1000);
+        }
+    }
+}
+
+// فحص السيرفر عند تحميل الصفحة - مع تأثيرات
 document.addEventListener('DOMContentLoaded', function() {
-    profileManager = new ProfileManager();
+    console.log('📄 صفحة Login تم تحميلها');
+    
+    // تهيئة التأثيرات السحرية
+    initializeMagicEffects();
+    
+    // فحص السيرفر
+    checkServerStatus();
+    
+    // إضافة event listeners
+    const loginForm = document.getElementById('loginFormElement');
+    const signupForm = document.getElementById('signupFormElement');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+        console.log('✅ تم إضافة event listener لتسجيل الدخول');
+    }
+    
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleSignup);
+        console.log('✅ تم إضافة event listener لإنشاء الحساب');
+    }
+    
+    // منع الدخول المزدوج
+    preventDoubleLogin();
 });
 
-// دوال عامة للاستخدام في HTML
-function updateProfile() {
-    if (profileManager) {
-        profileManager.updateProfile();
+// تحديث الـ CSS بإضافات سحرية
+const additionalStyles = `
+    @keyframes magicSlideIn {
+        0% {
+            transform: translateX(100px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
-}
+    
+    @keyframes magicSlideOut {
+        0% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        100% {
+            transform: translateX(100px);
+            opacity: 0;
+        }
+    }
+    
+    .magic-notification {
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+`;
 
-function changePassword() {
-    if (profileManager) {
-        profileManager.changePassword();
-    }
-}
+const styleElement = document.createElement('style');
+styleElement.textContent = additionalStyles;
+document.head.appendChild(styleElement);
 
-function refreshLocation() {
-    if (profileManager) {
-        profileManager.getUserLocation();
-    }
-}
+// جعل الدوال متاحة globally
+window.createMagicParticles = createMagicParticles;
+window.typeWriterEffect = typeWriterEffect;
+window.shakeElement = shakeElement;
+window.glowElement = glowElement;
+window.magicalFormTransition = magicalFormTransition;
+window.showMagicLoading = showMagicLoading;
+window.createRippleEffect = createRippleEffect;
+window.initializeMagicEffects = initializeMagicEffects;
 
-function exportProfileData() {
-    if (profileManager) {
-        profileManager.exportProfileData();
-    }
-}
+// الدوال الأصلية
+window.showNotification = showNotification;
+window.togglePasswordVisibility = togglePasswordVisibility;
+window.showPasswordHints = showPasswordHints;
+window.hidePasswordHints = hidePasswordHints;
+window.checkPasswordStrength = checkPasswordStrength;
+window.showSignupForm = showSignupForm;
+window.showLoginForm = showLoginForm;
+window.handleLogin = handleLogin;
+window.handleSignup = handleSignup;
+window.isValidEmail = isValidEmail;
+window.login = login;
+window.register = register;
+window.checkServerStatus = checkServerStatus;
 
-function logout() {
-    if (profileManager) {
-        profileManager.logout();
-    }
-}
+console.log('✅ login.js مع التأثيرات السحرية تم تحميله بنجاح');
