@@ -258,10 +258,18 @@
                 </div>
             </div>
 
-            <!-- قسم حسابي -->
+            <!-- قسم حسابي - محدث مع التكامل -->
             <div id="profile" class="tab-content">
                 <h2 class="page-title-black">👤 حسابي</h2>
                 
+                <!-- قسم حالة الحساب -->
+                <div class="settings-section">
+                    <h3>📊 حالة الحساب والمستوى</h3>
+                    <div id="accountStatus">
+                        <!-- سيتم عرض حالة الحساب هنا -->
+                    </div>
+                </div>
+
                 <div class="settings-section">
                     <h3>🔄 تحديث المعلومات الشخصية</h3>
                     <div class="form-group">
@@ -293,6 +301,22 @@
                     <button class="btn btn-warning" onclick="changePassword()">🔄 تغيير كلمة المرور</button>
                 </div>
 
+                <!-- قسم معلومات الموقع -->
+                <div class="settings-section">
+                    <h3>📍 معلومات الموقع الجغرافي</h3>
+                    <div id="locationInfo">
+                        <!-- سيتم عرض معلومات الموقع هنا -->
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-info" onclick="refreshLocation()">
+                            🗺️ تحديث معلومات الموقع
+                        </button>
+                        <button class="btn btn-success" onclick="exportProfileData()" style="margin-right: 10px;">
+                            📄 تصدير بيانات الملف الشخصي
+                        </button>
+                    </div>
+                </div>
+
                 <div class="settings-section">
                     <h3>📊 إحصائيات الحساب</h3>
                     <div class="stats-grid">
@@ -315,9 +339,30 @@
                     </div>
                 </div>
 
-               
-                  
-            
+                <!-- قسم إدارة الحساب -->
+                <div class="settings-section">
+                    <h3>⚙️ إدارة الحساب</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-warning" onclick="logout()">
+                            🚪 تسجيل الخروج
+                        </button>
+                        <button class="btn btn-danger" onclick="if(confirm('هل أنت متأكد من حذف الحساب؟ هذه العملية لا يمكن التراجع عنها!')) deleteAccount()">
+                            🗑️ حذف الحساب
+                        </button>
+                        <button class="btn btn-info" onclick="downloadBackup()">
+                            💾 نسخة احتياطية
+                        </button>
+                    </div>
+                </div>
+
+                <!-- قسم النشاط الأخير -->
+                <div class="settings-section">
+                    <h3>📈 النشاط الأخير</h3>
+                    <div id="recentActivity" style="background: #f8f9fa; padding: 20px; border-radius: 8px; min-height: 100px;">
+                        <div style="text-align: center; color: #6c757d;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">📊</div>
+                            <p>جاري تحميل النشاط الأخير...</p>
+                        </div>
                     </div>
                 </div>
             </div>
