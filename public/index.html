@@ -340,7 +340,20 @@
                 </div>
 
                 <!-- قسم إدارة الحساب -->
-             
+                <div class="settings-section">
+                    <h3>⚙️ إدارة الحساب</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-warning" onclick="logout()">
+                            🚪 تسجيل الخروج
+                        </button>
+                        <button class="btn btn-danger" onclick="if(confirm('هل أنت متأكد من حذف الحساب؟ هذه العملية لا يمكن التراجع عنها!')) deleteAccount()">
+                            🗑️ حذف الحساب
+                        </button>
+                        <button class="btn btn-info" onclick="downloadBackup()">
+                            💾 نسخة احتياطية
+                        </button>
+                    </div>
+                </div>
 
                 <!-- قسم النشاط الأخير -->
                 <div class="settings-section">
